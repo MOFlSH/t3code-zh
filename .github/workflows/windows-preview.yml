@@ -1,0 +1,139 @@
+name: Windows x64 Preview Artifact
+
+# Preview builds are intentionally download-only. This workflow never has
+# contents: write permission, never creates a tag or release, and uses a
+# preview version so the packaged app has no electron-updater feed.
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/windows-preview.yml"
+      - "apps/desktop/**"
+      - "apps/server/**"
+      - "apps/web/**"
+      - "packages/**"
+      - "scripts/**"
+      - "native/**"
+      - "assets/**"
+      - "patches/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-preview-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build Windows x64 NSIS preview
+    runs-on: windows-2025
+    timeout-minutes: 90
+    env:
+      # These are public runtime configuration values. Empty values are valid
+      # for a packaging-only run, while repository variables enable OAuth in a
+      # maintainer's manual smoke test without putting secrets in the artifact.
+      T3CODE_CLERK_PUBLISHABLE_KEY: ${{ vars.CLERK_PUBLISHABLE_KEY }}
+      T3CODE_CLERK_JWT_TEMPLATE: ${{ vars.CLERK_JWT_TEMPLATE }}
+      T3CODE_CLERK_CLI_OAUTH_CLIENT_ID: ${{ vars.CLERK_CLI_OAUTH_CLIENT_ID }}
+      T3CODE_RELAY_URL: ${{ vars.T3CODE_RELAY_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # setup-vp's Linux-shaped cache is slower on Windows than a direct
+      # install, so keep the Windows lane deterministic and cache-free.
+      - name: Setup Vite+
+        uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version-file: package.json
+          cache: false
+          run-install: false
+
+      - name: Install dependencies
+        run: vp install
+
+      - name: Ensure Electron runtime is installed
+        run: vp run --filter "@t3tools/desktop" ensure:electron
+
+      - name: Resolve preview version
+        id: version
+        shell: pwsh
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number || 0 }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $baseVersion = (Get-Content apps/desktop/package.json -Raw | ConvertFrom-Json).version
+          if ($env:GITHUB_EVENT_NAME -eq "pull_request") {
+            $version = "$baseVersion-pr.$env:PR_NUMBER.$env:GITHUB_RUN_NUMBER"
+          } else {
+            $date = [DateTime]::UtcNow.ToString("yyyyMMdd")
+            $version = "$baseVersion-preview.$date.$env:GITHUB_RUN_NUMBER"
+          }
+          if ($version -notmatch '^[0-9]+\.[0-9]+\.[0-9]+-(pr|preview)\.') {
+            throw "Resolved version is not a preview version: $version"
+          }
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "Resolved preview version: $version"
+
+      - name: Build Windows x64 NSIS installer
+        shell: pwsh
+        env:
+          PREVIEW_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          if (Test-Path release) { Remove-Item release -Recurse -Force }
+          node scripts/build-desktop-artifact.ts `
+            --platform win `
+            --target nsis `
+            --arch x64 `
+            --build-version "$env:PREVIEW_VERSION" `
+            --output-dir release
+
+      - name: Verify preview packaging invariants
+        shell: pwsh
+        env:
+          PREVIEW_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $files = @(Get-ChildItem release -File)
+          $installers = @($files | Where-Object { $_.Extension -eq ".exe" })
+          if ($installers.Count -ne 1) {
+            throw "Expected exactly one NSIS installer, found $($installers.Count): $($files.Name -join ', ')"
+          }
+          if ($installers[0].Name -notmatch '^T3-Code-[0-9]+\.[0-9]+\.[0-9]+-(pr|preview)\..*-x64\.exe$') {
+            throw "Installer name does not identify a Chinese x64 preview: $($installers[0].Name)"
+          }
+          $feedFiles = @($files | Where-Object { $_.Extension -in @(".yml", ".blockmap") })
+          if ($feedFiles.Count -ne 0) {
+            throw "Preview build unexpectedly emitted updater files: $($feedFiles.Name -join ', ')"
+          }
+          if (Test-Path release/latest.yml) { throw "latest.yml must not be emitted for a preview" }
+          if (Test-Path release/nightly.yml) { throw "nightly.yml must not be emitted for a preview" }
+          "Installer: $($installers[0].Name)"
+          "Version: $env:PREVIEW_VERSION"
+          "Updater feed: none"
+          "Release/tag/latest mutation: impossible (contents: read only)"
+
+      - name: Verify identity, protocol, language, and Codex OAuth coverage
+        run: >-
+          vp test run
+          scripts/build-desktop-artifact.test.ts
+          apps/desktop/src/app/DesktopAppIdentity.test.ts
+          apps/desktop/src/app/DesktopUserData.test.ts
+          apps/desktop/src/electron/ElectronProtocol.test.ts
+          apps/desktop/src/app/DesktopClerk.test.ts
+          apps/web/src/i18n/i18n.test.ts
+
+      - name: Upload Windows x64 preview installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: t3code-zh-cn-windows-x64-preview-${{ github.run_number }}
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 14
