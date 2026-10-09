@@ -62,7 +62,7 @@ export function DraftHeroHeadline({
   const primaryEnvironmentId = usePrimaryEnvironmentId();
   const projectGroupingSettings = useClientSettings(selectProjectGroupingSettings);
   const projectSortOrder = useClientSettings((settings) => settings.sidebarProjectSortOrder);
-  const { tText } = useI18n();
+  const { locale, tText } = useI18n();
   const setLogicalProjectDraftThreadId = useComposerDraftStore(
     (store) => store.setLogicalProjectDraftThreadId,
   );
@@ -244,7 +244,9 @@ export function DraftHeroHeadline({
           }
         >
           <span className="min-w-0 truncate">
-            {isScratchDraft ? "No project" : (activeProjectDisplayName ?? "Choose a project")}
+            {isScratchDraft
+              ? tText("No project")
+              : (activeProjectDisplayName ?? tText("Choose a project"))}
           </span>
         </TooltipTrigger>
         {activeProjectDisplayName && !isScratchDraft ? (
@@ -276,7 +278,7 @@ export function DraftHeroHeadline({
                 >
                   <MessageSquareDashedIcon className="size-full" />
                 </span>
-                No project
+                {tText("No project")}
               </span>
             </MenuRadioItem>
           )}
@@ -306,7 +308,7 @@ export function DraftHeroHeadline({
         {projectPickerEntries.length > 0 ? <MenuSeparator /> : null}
         <MenuItem onClick={openAddProject}>
           <FolderPlusIcon />
-          Add project
+          {tText("Add project")}
         </MenuItem>
       </MenuPopup>
     </Menu>
@@ -316,7 +318,7 @@ export function DraftHeroHeadline({
       onClick={openAddProject}
       className="pointer-events-auto inline cursor-pointer border-muted-foreground/35 border-b border-dotted text-muted-foreground/60 transition-colors hover:border-muted-foreground/60 hover:text-muted-foreground/80 focus-visible:rounded-sm focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring"
     >
-      {activeProjectTitle ?? "Add a project"}
+      {activeProjectTitle ?? tText("Add a project")}
     </button>
   );
 
@@ -384,7 +386,8 @@ export function DraftHeroHeadline({
           </>
         ) : canChooseProject ? (
           <>
-            {projectSelector} {tText("to start")}
+            {projectSelector}
+            {locale === "zh-CN" ? tText("to start") : ` ${tText("to start")}`}
           </>
         ) : (
           <>{tText("Add a project to start")}</>

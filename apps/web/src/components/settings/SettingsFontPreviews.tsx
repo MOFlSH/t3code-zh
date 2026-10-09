@@ -8,6 +8,7 @@ import { DISCONNECTED_COMPOSER_PLACEHOLDER } from "../../composerPlaceholder";
 import { resolveDiffThemeName, type DiffThemeName } from "../../lib/diffRendering";
 import { PREFERRED_HIGHLIGHTER } from "../../lib/syntaxHighlighting";
 import { GhosttyTerminalSurface } from "~/terminal/ghostty/surface";
+import { useI18n } from "~/i18n/i18n";
 
 // The font previews are the real surfaces, not lookalikes: the composer's
 // Tiptap editor, the diff panel's file diff, and the Ghostty canvas
@@ -30,8 +31,18 @@ function noop() {}
 /** A live composer editor: type in it to feel the family and size. */
 export function PromptFontPreview() {
   const editorRef = useRef<ComposerPromptEditorHandle>(null);
-  const [prompt, setPrompt] = useState(PROMPT_PREVIEW_TEXT);
-  const [cursor, setCursor] = useState(PROMPT_PREVIEW_TEXT.length);
+  const { tText } = useI18n();
+  const localizedPromptPreviewText = tText(PROMPT_PREVIEW_TEXT);
+  const [prompt, setPrompt] = useState(localizedPromptPreviewText);
+  const [cursor, setCursor] = useState(localizedPromptPreviewText.length);
+  const previousPromptPreviewText = useRef(localizedPromptPreviewText);
+  useEffect(() => {
+    if (prompt === previousPromptPreviewText.current) {
+      setPrompt(localizedPromptPreviewText);
+      setCursor(localizedPromptPreviewText.length);
+    }
+    previousPromptPreviewText.current = localizedPromptPreviewText;
+  }, [localizedPromptPreviewText, prompt]);
   const onChange = useCallback((nextValue: string, nextCursor: number) => {
     setPrompt(nextValue);
     setCursor(nextCursor);
@@ -39,7 +50,7 @@ export function PromptFontPreview() {
   return (
     <div className="mt-1 mb-2 rounded-lg border border-border bg-background px-3 py-2">
       <ComposerPromptEditor
-        ariaLabel="Prompt font preview"
+        ariaLabel={tText("Prompt font preview")}
         editorRef={editorRef}
         value={prompt}
         cursor={cursor}

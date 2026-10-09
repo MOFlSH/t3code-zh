@@ -41,7 +41,7 @@ describe("application localization", () => {
       ),
     ).toBe("新建会话的默认权限。项目可以覆盖此设置。");
     expect(resolveSourceMessage("zh-CN", "Full access")).toBe("完全访问");
-    expect(resolveSourceMessage("zh-CN", "Authenticated as")).toBe("已认证账户");
+    expect(resolveSourceMessage("zh-CN", "Authenticated as")).toBe("已认证为");
     expect(resolveSourceMessage("zh-CN", "ChatGPT Plus Subscription")).toBe(
       "ChatGPT Plus 订阅",
     );
