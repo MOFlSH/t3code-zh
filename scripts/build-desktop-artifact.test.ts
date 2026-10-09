@@ -1180,7 +1180,9 @@ it.layer(NodeServices.layer)("build-desktop-artifact", (it) => {
                 Effect.gen(function* () {
                   assert.equal(command._tag, "StandardCommand");
                   if (command._tag !== "StandardCommand") return mockProcess(1);
-                  assert.equal(command.command, "cargo");
+                  // Windows resolves PATH commands to an absolute .EXE path
+                  // before spawning; Linux keeps the bare command name.
+                  assert.match(command.command, /(?:^|[\\/])cargo(?:\.exe)?$/i);
                   assert.deepEqual(command.args, [
                     "build",
                     "--locked",
