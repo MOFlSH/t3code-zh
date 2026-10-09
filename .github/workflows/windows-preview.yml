@@ -58,7 +58,7 @@ jobs:
             "T3CODE_RELAY_URL"
           )
           foreach ($name in $required) {
-            if (-not (Select-String -Path .env -Pattern "^$name=\\S+" -Quiet)) {
+            if (-not (Select-String -Path .env -Pattern "^$name=\S+" -Quiet)) {
               throw "Public preview configuration is missing $name in .env.example"
             }
           }
