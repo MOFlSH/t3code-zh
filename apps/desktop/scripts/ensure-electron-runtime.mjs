@@ -10,6 +10,9 @@ const require = NodeModule.createRequire(import.meta.url);
 const hostPlatform = NodeOS.platform();
 // oxlint-disable-next-line t3code/no-global-process-runtime -- Standalone repair script has no Effect runtime.
 const hostArch = NodeOS.arch();
+// oxlint-disable-next-line t3code/no-global-process-runtime -- Standalone repair script has no Effect runtime.
+const pythonCommand =
+  process.env.PYTHON?.trim() || (hostPlatform === "win32" ? "python" : "python3");
 
 function getPlatformPath() {
   switch (hostPlatform) {
@@ -130,7 +133,7 @@ function installElectronRuntime(electronDir, version) {
     if (hostPlatform === "darwin") {
       runChecked("ditto", ["-x", "-k", zipPath, NodePath.join(electronDir, "dist")]);
     } else {
-      runChecked("python3", [
+      runChecked(pythonCommand, [
         "-c",
         "import os, sys, zipfile; os.makedirs(sys.argv[2], exist_ok=True); zipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])",
         zipPath,

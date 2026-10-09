@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { DownloadIcon } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { useI18n } from "~/i18n/i18n";
 import { useEnvironments } from "~/state/environments";
 import { isDesktopLocalConnectionTarget } from "~/connection/desktopLocal";
 import { useDismissedProviderUpdateNotificationKeys } from "../providerUpdateDismissal";
@@ -12,6 +13,7 @@ import {
   environmentGroupsWithUpdates,
   getProviderUpdateInitialToastView,
   localEnvironmentUpdateNotificationKey,
+  localizeProviderUpdateText,
 } from "./ProviderUpdateLaunchNotification.logic";
 import { ProviderUpdatePrimaryNotification } from "./ProviderUpdatePrimaryNotification";
 import { stackedThreadToast, toastManager } from "./ui/toast";
@@ -57,6 +59,7 @@ const SETTLING_GRACE_MS = 30_000;
 
 function ProviderUpdateEnvironmentsNotification() {
   const navigate = useNavigate();
+  const { tText } = useI18n();
   const { groups, isAnySettling } = useLocalEnvironmentUpdateGroups();
   const { dismissedNotificationKeys, dismissNotificationKey } =
     useDismissedProviderUpdateNotificationKeys();
@@ -160,10 +163,13 @@ function ProviderUpdateEnvironmentsNotification() {
     const toastId = toastManager.add(
       stackedThreadToast({
         type: "warning",
-        title: getProviderUpdateInitialToastView({
-          updateProviders: candidateUnion,
-          oneClickProviders: candidateUnion,
-        }).title,
+        title: localizeProviderUpdateText(
+          getProviderUpdateInitialToastView({
+            updateProviders: candidateUnion,
+            oneClickProviders: candidateUnion,
+          }).title,
+          tText,
+        ),
         description: (
           <ProviderUpdateEnvironmentRows
             onInteract={() => {
@@ -173,7 +179,7 @@ function ProviderUpdateEnvironmentsNotification() {
         ),
         timeout: 0,
         actionProps: {
-          children: "Settings",
+          children: tText("Settings"),
           onClick: openProviderSettings,
         },
         actionVariant: "outline",
@@ -192,6 +198,7 @@ function ProviderUpdateEnvironmentsNotification() {
     dismissedNotificationKeys,
     dismissNotificationKey,
     openProviderSettings,
+    tText,
   ]);
 
   return null;

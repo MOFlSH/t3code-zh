@@ -1,6 +1,7 @@
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "~/lib/utils";
+import { useI18n } from "~/i18n/i18n";
 
 // Size sets how much room the state claims and how large its title reads:
 // "compact" is a card-sized notice, "hero" fills a whole route.
@@ -90,12 +91,22 @@ function EmptyMedia({
 }
 
 function EmptyTitle({ className, ...props }: React.ComponentProps<"div">) {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props.children === "string" ? { ...props, children: tText(props.children) } : props;
   return (
-    <div className={cn("font-semibold text-xl", className)} data-slot="empty-title" {...props} />
+    <div
+      className={cn("font-semibold text-xl", className)}
+      data-slot="empty-title"
+      {...localizedProps}
+    />
   );
 }
 
 function EmptyDescription({ className, ...props }: React.ComponentProps<"p">) {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props.children === "string" ? { ...props, children: tText(props.children) } : props;
   return (
     <div
       className={cn(
@@ -103,7 +114,7 @@ function EmptyDescription({ className, ...props }: React.ComponentProps<"p">) {
         className,
       )}
       data-slot="empty-description"
-      {...props}
+      {...localizedProps}
     />
   );
 }

@@ -19,6 +19,7 @@ import { Popover, PopoverPopup, PopoverTrigger } from "../ui/popover";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import type { ProjectOverrideEntry, ScopedSettingsTarget } from "./scopedSettings";
 import { isProjectScopedSettingKey } from "./scopedSettings";
+import { useI18n } from "~/i18n/i18n";
 
 interface InheritanceLayer {
   readonly key: "project" | "environment" | "t3.json" | "built-in";
@@ -177,12 +178,33 @@ export function SettingInheritance({
   overridingProjects?: readonly SettingOverridingProject[];
   onClearOverrides?: (entries: readonly ProjectOverrideEntry[]) => void;
 }) {
+  const { tText } = useI18n();
   const key = keys[0];
   if (!key || targets.length === 0) return null;
+  const localizeValue = (value: string) => {
+    const dayCount = /^(\d+) days?$/u.exec(value);
+    if (dayCount) {
+      return dayCount[0].endsWith("day")
+        ? tText("{count} day", { count: Number(dayCount[1]) })
+        : tText("{count} days", { count: Number(dayCount[1]) });
+    }
+    const itemCount = /^(\d+) items?$/u.exec(value);
+    if (itemCount) {
+      return itemCount[0].endsWith("item")
+        ? tText("{count} item", { count: Number(itemCount[1]) })
+        : tText("{count} items", { count: Number(itemCount[1]) });
+    }
+    return tText(value);
+  };
   const overrideSummary =
     overridingProjects.length > 0
-      ? `${summary} · ${overridingProjects.length} project ${overridingProjects.length === 1 ? "override" : "overrides"}`
-      : summary;
+      ? tText(
+          overridingProjects.length === 1
+            ? "{summary} · {count} project override"
+            : "{summary} · {count} project overrides",
+          { summary: tText(summary), count: overridingProjects.length },
+        )
+      : tText(summary);
   const chains = targets.flatMap((target) => {
     const environment = environments.find(
       (candidate) => candidate.environmentId === target.environmentId,
@@ -207,7 +229,9 @@ export function SettingInheritance({
                 <Button
                   size="icon-micro"
                   variant="ghost-muted"
-                  aria-label={`${overrideSummary}. Show where this value comes from`}
+                  aria-label={tText("{summary}. Show where this value comes from", {
+                    summary: overrideSummary,
+                  })}
                 />
               }
             />
@@ -249,7 +273,13 @@ export function SettingInheritance({
                         layer.effective ? "font-medium text-foreground" : "text-muted-foreground",
                       )}
                     >
-                      {layer.key === "environment" ? "Environment" : layer.label}
+                      {layer.key === "environment"
+                        ? tText("Environment")
+                        : layer.key === "project"
+                          ? tText("Project")
+                          : layer.key === "built-in"
+                            ? tText("Default")
+                            : layer.label}
                     </span>
                     <span
                       className={cn(
@@ -261,7 +291,7 @@ export function SettingInheritance({
                             : "text-muted-foreground/60",
                       )}
                     >
-                      <span className="max-w-32 truncate">{layer.value}</span>
+                      <span className="max-w-32 truncate">{localizeValue(layer.value)}</span>
                       {layer.effective ? (
                         <CheckIcon aria-hidden className="size-3.5 shrink-0 text-primary" />
                       ) : (
@@ -280,10 +310,12 @@ export function SettingInheritance({
                 return (
                   <div className="mt-2 border-t border-border/60 pt-2">
                     <div className="flex items-center justify-between gap-3 px-2 text-xs text-muted-foreground">
-                      <span>Overridden by</span>
+                      <span>{tText("Overridden by")}</span>
                       {onClearOverrides ? (
                         <InlineButton onClick={() => onClearOverrides(overriding)}>
-                          Reset {overriding.length === 1 ? "it" : "all"}
+                          {tText("Reset {target}", {
+                            target: tText(overriding.length === 1 ? "it" : "all"),
+                          })}
                         </InlineButton>
                       ) : null}
                     </div>
@@ -298,7 +330,7 @@ export function SettingInheritance({
                           </InlineButton>
                           <span className="max-w-32 truncate text-muted-foreground tabular-nums">
                             {isProjectScopedSettingKey(key)
-                              ? formatValue(key, overrides[project.projectId]?.[key])
+                              ? localizeValue(formatValue(key, overrides[project.projectId]?.[key]))
                               : null}
                           </span>
                         </li>

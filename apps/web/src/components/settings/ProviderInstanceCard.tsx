@@ -56,6 +56,7 @@ import { ProviderInstanceIcon } from "../chat/ProviderInstanceIcon";
 import { ProviderAccentColorPicker } from "./ProviderAccentColorPicker";
 import { RedactedSensitiveText } from "./RedactedSensitiveText";
 import { SettingsRow, SettingsSection } from "./settingsLayout";
+import { useI18n } from "~/i18n/i18n";
 import { AcpSessionManagementSection } from "./AcpSessionManagementSection";
 import { FoldedSettingsSection } from "./FoldedSettingsSection";
 import { readCodexSetupMode } from "./CodexSetupSection.logic";
@@ -303,6 +304,7 @@ export function ProviderEnvironmentSection(props: {
   readonly environment: ReadonlyArray<ProviderInstanceEnvironmentVariable>;
   readonly onChange: (environment: ReadonlyArray<ProviderInstanceEnvironmentVariable>) => void;
 }) {
+  const { tText } = useI18n();
   const [rows, setRows] = useState<ReadonlyArray<EnvironmentDraftRow>>(() =>
     props.environment.map(makeEnvironmentDraftRow),
   );
@@ -387,7 +389,7 @@ export function ProviderEnvironmentSection(props: {
       control={
         <Button type="button" size="sm" variant="outline" onClick={addVariable}>
           <PlusIcon className="size-3" />
-          Add variable
+          {tText("Add variable")}
         </Button>
       }
     >
@@ -569,6 +571,7 @@ export function ProviderInstanceCard({
   environmentId,
   acpProjects = EMPTY_ACP_PROJECTS,
 }: ProviderInstanceCardProps) {
+  const { tText } = useI18n();
   const enabled = resolveProviderInstanceEnabled(instance);
   const compatibility = enabled ? liveProvider?.compatibilityAdvisory : undefined;
   // A locally disabled provider reads "Disabled" with a muted dot even if its
@@ -580,6 +583,12 @@ export function ProviderInstanceCard({
   const summary = enabled
     ? getProviderSummary(liveProvider)
     : { headline: "Disabled", detail: null };
+  const localizeStatusText = (value: string) => {
+    const separator = value.indexOf(" · ");
+    if (separator < 0) return tText(value);
+    return `${tText(value.slice(0, separator))} · ${tText(value.slice(separator + 3))}`;
+  };
+  const localizedSummaryHeadline = localizeStatusText(summary.headline);
   const authEmail = liveProvider?.auth.email?.trim();
   const isAuthenticated = enabled && liveProvider?.auth.status === "authenticated";
   const authLabel =
@@ -599,7 +608,7 @@ export function ProviderInstanceCard({
   const updateProgress = isUpdating
     ? ((updateState?.status === "queued" || updateState?.status === "running"
         ? updateState.message
-        : null) ?? "Starting update")
+        : null) ?? tText("Starting update"))
     : null;
   const updateProblem =
     !isUpdating && (updateState?.status === "failed" || updateState?.status === "unchanged")
@@ -623,15 +632,15 @@ export function ProviderInstanceCard({
     onCopy: ({ providerName }) => {
       toastManager.add({
         type: "success",
-        title: `${providerName} update command copied`,
-        description: "Run it in a terminal when you are ready to update.",
+        title: tText("{provider} update command copied", { provider: providerName }),
+        description: tText("Run it in a terminal when you are ready to update."),
       });
     },
     onError: (error, { providerName }) => {
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: `Could not copy ${providerName} update command`,
+          title: tText("Could not copy {provider} update command", { provider: providerName }),
           description: error.message,
         }),
       );
@@ -769,28 +778,29 @@ export function ProviderInstanceCard({
   // Keep compatibility copy compact; the version popover carries the explanation.
   const inlineStatusDetail = hasCompatibilityWarning
     ? compatibility?.status === "broken"
-      ? "Incompatible"
+      ? tText("Incompatible")
       : compatibility?.status === "unsupported"
-        ? "Unsupported"
-        : "Limited support"
+        ? tText("Unsupported")
+        : tText("Limited support")
     : summary.detail;
+  const localizedInlineStatusDetail = inlineStatusDetail ? tText(inlineStatusDetail) : null;
   const editorStatusNode =
     isAuthenticated && authEmail ? (
       <>
         {needsAttention ? statusDotNode : null}
-        <span>Authenticated as</span>
+        <span>{tText("Authenticated as")}</span>
         <ProviderAuthEmail email={authEmail} />
-        {authLabel ? <span>· {authLabel}</span> : null}
-        {inlineStatusDetail ? (
-          <span className="min-w-0 [overflow-wrap:anywhere]">· {inlineStatusDetail}</span>
+        {authLabel ? <span>· {tText(authLabel)}</span> : null}
+        {localizedInlineStatusDetail ? (
+          <span className="min-w-0 [overflow-wrap:anywhere]">· {localizedInlineStatusDetail}</span>
         ) : null}
       </>
     ) : (
       <>
         {statusDotNode}
-        <span>{summary.headline}</span>
-        {inlineStatusDetail ? (
-          <span className="min-w-0 [overflow-wrap:anywhere]">· {inlineStatusDetail}</span>
+        <span>{localizedSummaryHeadline}</span>
+        {localizedInlineStatusDetail ? (
+          <span className="min-w-0 [overflow-wrap:anywhere]">· {localizedInlineStatusDetail}</span>
         ) : null}
       </>
     );
@@ -806,7 +816,7 @@ export function ProviderInstanceCard({
                   size={mode === "list" ? "icon-micro" : "icon-xs"}
                   variant="ghost-muted"
                   className={mode === "list" ? "pointer-events-auto relative shrink-0" : undefined}
-                  aria-label={`${updateProgress ? "Updating" : versionAdvisory.title} — view details`}
+                  aria-label={`${updateProgress ? tText("Updating") : tText(versionAdvisory.title)} — ${tText("view details")}`}
                 >
                   {updateProgress ? (
                     <Spinner tone="muted" {...(mode === "list" ? { size: "sm" as const } : {})} />
@@ -824,14 +834,14 @@ export function ProviderInstanceCard({
           }
         />
         <TooltipPopup side="top">
-          {updateProgress ? "Updating" : versionAdvisory.title}
+          {updateProgress ? tText("Updating") : tText(versionAdvisory.title)}
         </TooltipPopup>
       </Tooltip>
-      <PopoverPopup side="bottom" align="end" width="md" aria-label={versionAdvisory.title}>
+      <PopoverPopup side="bottom" align="end" width="md" aria-label={tText(versionAdvisory.title)}>
         <div className="grid min-w-0 gap-3">
           <div className="grid gap-0.5">
             <p className="text-sm font-semibold leading-tight text-foreground">
-              {versionAdvisory.title}
+              {tText(versionAdvisory.title)}
             </p>
             <p
               className={cn(
@@ -853,10 +863,12 @@ export function ProviderInstanceCard({
             >
               {isUpdating ? <Spinner /> : <DownloadIcon />}
               {isUpdating
-                ? "Updating"
+                ? tText("Updating")
                 : versionAdvisory.targetVersion
-                  ? `Install ${getProviderVersionLabel(versionAdvisory.targetVersion)}`
-                  : "Update now"}
+                  ? tText("Install {version}", {
+                      version: getProviderVersionLabel(versionAdvisory.targetVersion) ?? "",
+                    })
+                  : tText("Update now")}
             </Button>
           ) : null}
           {updateProgress || updateProblem ? (
@@ -873,7 +885,7 @@ export function ProviderInstanceCard({
           {onRunVersionAction && updateCommand ? (
             <div className="flex items-center gap-2 text-3xs font-medium uppercase tracking-wider text-muted-foreground">
               <span aria-hidden className="h-px flex-1 bg-border" />
-              or, update manually using
+              {tText("or, update manually using")}
               <span aria-hidden className="h-px flex-1 bg-border" />
             </div>
           ) : null}
@@ -897,7 +909,7 @@ export function ProviderInstanceCard({
                     </Button>
                   }
                 />
-                <TooltipPopup side="top">Copy command</TooltipPopup>
+                <TooltipPopup side="top">{tText("Copy command")}</TooltipPopup>
               </Tooltip>
             </div>
           ) : null}
@@ -951,11 +963,13 @@ export function ProviderInstanceCard({
                   className="pointer-events-auto line-clamp-2 [overflow-wrap:anywhere]"
                 >
                   {updateProgress ? (
-                    `Updating · ${updateProgress}`
+                    `${tText("Updating")} · ${tText(updateProgress)}`
                   ) : (
                     <>
-                      {summary.headline}
-                      {needsAttention && inlineStatusDetail ? ` · ${inlineStatusDetail}` : null}
+                      {localizedSummaryHeadline}
+                      {needsAttention && localizedInlineStatusDetail
+                        ? ` · ${localizedInlineStatusDetail}`
+                        : null}
                     </>
                   )}
                 </span>
@@ -1019,8 +1033,9 @@ export function ProviderInstanceCard({
       title="Driver"
       description={
         <span>
-          This instance uses <code className="text-foreground">{String(instance.driver)}</code>,
-          which is not available in this build. Its configuration is preserved.
+          {tText("This instance uses")}{" "}
+          <code className="text-foreground">{String(instance.driver)}</code>
+          {tText(", which is not available in this build. Its configuration is preserved.")}
         </span>
       }
     />
@@ -1060,7 +1075,7 @@ export function ProviderInstanceCard({
                     disabled={readOnly}
                   >
                     <ExternalLinkIcon />
-                    Continue authentication
+                    {tText("Continue authentication")}
                   </Button>
                 </div>
               ) : null}
@@ -1088,7 +1103,7 @@ export function ProviderInstanceCard({
                 className="min-w-0 flex-1 @min-[32rem]/settings-row:w-56"
                 value={instance.displayName ?? ""}
                 onCommit={updateDisplayName}
-                placeholder={driverOption?.label ?? "Instance label"}
+                placeholder={driverOption?.label ?? tText("Instance label")}
                 spellCheck={false}
               />
             </div>
@@ -1173,8 +1188,9 @@ export function ProviderInstanceCard({
         <SettingsSection title="Models">
           <div className="px-3 py-3 sm:px-4">
             <p className="mb-3 text-xs text-muted-foreground">
-              Favorites, visibility, and ordering are saved on this device. Custom models are saved
-              on the selected environment.
+              {tText(
+                "Favorites, visibility, and ordering are saved on this device. Custom models are saved on the selected environment.",
+              )}
             </p>
             <ProviderModelsSection
               canManageCustomModels={!readOnly}

@@ -3,6 +3,7 @@
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
 
 import { cn } from "~/lib/utils";
+import { useI18n } from "~/i18n/i18n";
 
 /**
  * `mixed` renders the thumb centred on a muted track for a selection whose
@@ -15,6 +16,11 @@ function Switch({
   mixed = false,
   ...props
 }: SwitchPrimitive.Root.Props & { size?: "default" | "sm"; mixed?: boolean }) {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
     <SwitchPrimitive.Root
       className={cn(
@@ -31,7 +37,7 @@ function Switch({
       // aria-checked. Only pass the attribute when mixed so the real state
       // survives for screen readers.
       {...(mixed ? { "aria-checked": "mixed" as const } : {})}
-      {...props}
+      {...localizedProps}
     >
       <SwitchPrimitive.Thumb
         className={cn(

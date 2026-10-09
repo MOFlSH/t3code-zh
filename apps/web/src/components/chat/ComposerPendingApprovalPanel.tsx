@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { type PendingApproval } from "../../session-logic";
 import { cn } from "~/lib/utils";
+import { useI18n } from "~/i18n/i18n";
 
 interface ComposerPendingApprovalPanelProps {
   approval: PendingApproval;
@@ -13,27 +14,28 @@ export const ComposerPendingApprovalPanel = memo(function ComposerPendingApprova
   pendingCount,
   className,
 }: ComposerPendingApprovalPanelProps) {
+  const { t } = useI18n();
   const Detail = approval.requestKind === "mcp-elicitation" ? "span" : "code";
   const fallbackLabel =
     approval.requestKind === "mcp-elicitation"
-      ? "App access approval"
+      ? t("approval.appAccess")
       : approval.requestKind === "command"
-        ? "Command approval"
+        ? t("approval.command")
         : approval.requestKind === "file-read"
-          ? "File read approval"
+          ? t("approval.fileRead")
           : approval.requestKind === "permission"
-            ? "App permission approval"
-            : "File change approval";
+            ? t("approval.appPermission")
+            : t("approval.fileChange");
   const detailAriaLabel =
     approval.requestKind === "mcp-elicitation"
-      ? "App access request"
+      ? t("approval.appAccessRequest")
       : approval.requestKind === "command"
-        ? "Command"
+        ? t("approval.command")
         : approval.requestKind === "file-read"
-          ? "File to read"
+          ? t("approval.fileToRead")
           : approval.requestKind === "permission"
-            ? "Permission request"
-            : "File change";
+            ? t("approval.permissionRequest")
+            : t("approval.fileChangeDetail");
 
   return (
     <span
@@ -60,7 +62,7 @@ export const ComposerPendingApprovalPanel = memo(function ComposerPendingApprova
         tabIndex={0}
       >
         {approval.responseCapability === "not_resumable"
-          ? "Provider process is gone — interrupt or restart the run to respond."
+          ? t("approval.providerGone")
           : approval.detail || fallbackLabel}
       </Detail>
     </span>

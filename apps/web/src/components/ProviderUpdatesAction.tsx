@@ -2,12 +2,14 @@ import { PROVIDER_DISPLAY_NAMES } from "@t3tools/contracts";
 import { useMemo, useRef, useState } from "react";
 
 import { useEnvironments } from "~/state/environments";
+import { useI18n } from "~/i18n/i18n";
 import { serverEnvironment } from "~/state/server";
 import { useAtomCommand } from "~/state/use-atom-command";
 import {
   canOneClickUpdateProviderCandidate,
   collectProviderUpdateCandidates,
   getProviderUpdateRunToastView,
+  localizeProviderUpdateText,
   type ProviderUpdateRun,
 } from "./ProviderUpdateLaunchNotification.logic";
 import { Button } from "./ui/button";
@@ -22,6 +24,7 @@ import { Tooltip, TooltipPopup, TooltipTrigger } from "./ui/tooltip";
  * it. Renders nothing when no machine has a one-click update.
  */
 export function ProviderUpdatesAction() {
+  const { tText } = useI18n();
   const { environments } = useEnvironments();
   const updateProvider = useAtomCommand(serverEnvironment.updateProvider, {
     reportFailure: false,
@@ -73,7 +76,12 @@ export function ProviderUpdatesAction() {
         toastManager.add(
           stackedThreadToast({
             ...view,
-            description: <span className="whitespace-pre-line">{view.description}</span>,
+            title: localizeProviderUpdateText(view.title, tText),
+            description: (
+              <span className="whitespace-pre-line">
+                {localizeProviderUpdateText(view.description, tText)}
+              </span>
+            ),
           }),
         );
       }
@@ -93,7 +101,7 @@ export function ProviderUpdatesAction() {
             disabled={isPending}
             onClick={() => void handleUpdate()}
           >
-            {isPending ? "Updating…" : "Update all"}
+            {isPending ? tText("Updating…") : tText("Update all")}
           </Button>
         }
       />

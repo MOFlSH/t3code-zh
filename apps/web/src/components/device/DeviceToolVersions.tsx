@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { DeviceToolVersions as ToolVersions } from "@t3tools/contracts";
 import { InlineButton } from "~/components/ui/button";
 import { Popover, PopoverPopup, PopoverTitle, PopoverTrigger } from "~/components/ui/popover";
+import { useI18n } from "~/i18n/i18n";
 
 export function DeviceToolVersions({
   tools,
@@ -16,6 +17,7 @@ export function DeviceToolVersions({
   owner?: string | undefined;
   error?: string | undefined;
 }) {
+  const { tText } = useI18n();
   const selected = kind ? tools?.[kind] : undefined;
   const version =
     selected?.runningVersion ??
@@ -24,13 +26,14 @@ export function DeviceToolVersions({
       : selected?.installedVersions
           .toSorted((a, b) => a.localeCompare(b, undefined, { numeric: true }))
           .at(-1));
-  const label = kind === "hub" ? "Device hub" : "Agent device";
+  const labelSource = kind === "hub" ? "Device hub" : "Agent device";
+  const label = tText(labelSource);
   return (
     <Popover>
       <PopoverTrigger
         aria-label={
           kind
-            ? `${label}: ${version ? `version ${version}` : selected ? "not installed" : "version unknown"}. Show details`
+            ? `${label}: ${version ? `${tText("version")} ${version}` : selected ? tText("not installed") : tText("version unknown")}. ${tText("Show details")}`
             : undefined
         }
         render={<InlineButton tone="muted" />}
@@ -39,14 +42,14 @@ export function DeviceToolVersions({
           ? version
             ? `v${version}`
             : selected
-              ? "Not installed"
-              : "Version unknown"
+              ? tText("Not installed")
+              : tText("Version unknown")
           : error
-            ? "Versions unavailable"
-            : "Versions"}
+            ? tText("Versions unavailable")
+            : tText("Versions")}
       </PopoverTrigger>
       <PopoverPopup align="end" width="md">
-        <PopoverTitle>{kind ? label : "Device tools"}</PopoverTitle>
+        <PopoverTitle>{kind ? label : tText("Device tools")}</PopoverTitle>
         {tools ? (
           <div className="mt-4 divide-y divide-border/50">
             {(
@@ -55,28 +58,33 @@ export function DeviceToolVersions({
                 ["Agent device", tools.agent],
               ] as const
             )
-              .filter(([name]) => !kind || name === label)
+              .filter(([name]) => !kind || name === labelSource)
               .map(([name, tool]) => (
                 <div key={name} className="space-y-2 py-3 first:pt-0 last:pb-0">
-                  {!kind ? <p className="text-xs font-medium">{name}</p> : null}
+                  {!kind ? <p className="text-xs font-medium">{tText(name)}</p> : null}
                   <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-xs">
-                    <dt className="text-muted-foreground">Running</dt>
-                    <dd className="text-right font-mono">{tool.runningVersion ?? "Not running"}</dd>
-                    <dt className="text-muted-foreground">Required</dt>
+                    <dt className="text-muted-foreground">{tText("Running")}</dt>
+                    <dd className="text-right font-mono">
+                      {tool.runningVersion ?? tText("Not running")}
+                    </dd>
+                    <dt className="text-muted-foreground">{tText("Required")}</dt>
                     <dd className="text-right font-mono">{tool.requiredVersion}</dd>
-                    <dt className="text-muted-foreground">Installed</dt>
+                    <dt className="text-muted-foreground">{tText("Installed")}</dt>
                     <dd className="text-right font-mono break-words">
-                      {tool.installedVersions.join(", ") || "None"}
+                      {tool.installedVersions.join(", ") || tText("None")}
                     </dd>
                   </dl>
                 </div>
               ))}
           </div>
         ) : (
-          <p className="mt-3 text-xs text-muted-foreground">Versions have not been checked.</p>
+          <p className="mt-3 text-xs text-muted-foreground">
+            {tText("Versions have not been checked.")}
+          </p>
         )}
         <p className="mt-4 border-t border-border/50 pt-3 text-xs text-muted-foreground">
-          {owner ? `Managed by ${owner}. ` : ""}Tools update automatically on this host when needed.
+          {owner ? tText("Managed by {owner}. ", { owner }) : ""}
+          {tText("Tools update automatically on this host when needed.")}
         </p>
         {error ? (
           <p role="status" className="mt-2 text-xs text-destructive">

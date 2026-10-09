@@ -26,6 +26,7 @@ import { WorkspacePageContainer, type WorkspacePageWidth } from "../WorkspacePag
 import { Button } from "../ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { useOptionalSettingsScope } from "./SettingsScopeContext";
+import { useI18n } from "~/i18n/i18n";
 import { SettingsScopeSentence } from "./SettingsScopeSentence";
 import {
   isProjectScopedSettingKey,
@@ -146,17 +147,22 @@ export const SETTINGS_PICKER_TRIGGER_CLASSNAME = "min-w-0 max-w-none shrink-0";
 
 /** Info affordance explaining how a setting interacts with the shared background policy. */
 export function PolicyTooltip({ children }: { readonly children: string }) {
+  const { tText } = useI18n();
   return (
     <Tooltip>
       <TooltipTrigger
         delay={200}
         render={
-          <Button size="icon-micro" variant="ghost-muted" aria-label="Background policy details">
+          <Button
+            size="icon-micro"
+            variant="ghost-muted"
+            aria-label={tText("Background policy details")}
+          >
             <InfoIcon className="size-3.5" />
           </Button>
         }
       />
-      <TooltipPopup side="top">{children}</TooltipPopup>
+      <TooltipPopup side="top">{tText(children)}</TooltipPopup>
     </Tooltip>
   );
 }
@@ -193,6 +199,8 @@ export function SettingsSection({
   children: ReactNode;
 }) {
   const targetRef = useSettingsSearchTarget<HTMLElement>(sectionProps.id);
+  const { tText } = useI18n();
+  const localizedTitle = tText(title);
 
   return (
     <section
@@ -202,7 +210,7 @@ export function SettingsSection({
       className={cn(!hideTitle && "space-y-2.5", className)}
     >
       {hideTitle ? (
-        <h2 className="sr-only">{title}</h2>
+        <h2 className="sr-only">{localizedTitle}</h2>
       ) : (
         <div
           data-settings-scroll-target
@@ -211,7 +219,7 @@ export function SettingsSection({
           <div className="flex min-w-0 items-center gap-1">
             <h2 className="flex min-h-7 items-center gap-2 text-sm font-normal text-foreground/70">
               {icon}
-              {title}
+              {localizedTitle}
             </h2>
             {titleAction}
           </div>
@@ -232,13 +240,14 @@ export function SettingsUnavailableGroup({
   children: ReactNode;
   message?: ReactNode;
 }) {
+  const { tText } = useI18n();
   if (message === undefined) return children;
 
   return (
     <div className="border-border/60 bg-muted/20 py-1.5">
       <div className="flex items-start gap-2 px-3 py-2 text-xs leading-relaxed text-muted-foreground sm:px-4">
         <InfoIcon className="mt-0.5 size-3.5 shrink-0 text-warning" />
-        <p>{message}</p>
+        <p>{typeof message === "string" ? tText(message) : message}</p>
       </div>
       <div className="[&_h3]:opacity-64 [&_p]:opacity-64">{children}</div>
     </div>
@@ -287,6 +296,10 @@ export function SettingsRow({
   children?: ReactNode;
 }) {
   const targetRef = useSettingsSearchTarget<HTMLDivElement>(rowProps.id);
+  const { tText } = useI18n();
+  const localizedTitle = typeof title === "string" ? tText(title) : title;
+  const localizedDescription = typeof description === "string" ? tText(description) : description;
+  const localizedStatus = typeof status === "string" ? tText(status) : status;
   const primarySettingsAvailable = usePrimarySettingsAvailable();
   const context = useOptionalSettingsScope();
   const primaryEnvironmentId = usePrimaryEnvironmentId();
@@ -360,7 +373,7 @@ export function SettingsRow({
   const renderedReset = unavailable ? null : isProjectScope && scopedKeys.length > 0 ? (
     source === "project" || source === "mixed" ? (
       <SettingResetButton
-        label={typeof title === "string" ? title : "override"}
+        label={typeof title === "string" ? tText(title) : tText("override")}
         tooltip="Reset to inherited value"
         onClick={() => (onResetOverride ? onResetOverride() : clearOverrides(scopedKeys))}
       />
@@ -386,7 +399,7 @@ export function SettingsRow({
           {control}
         </div>
       </TooltipTrigger>
-      <TooltipPopup side="top">{message}</TooltipPopup>
+      <TooltipPopup side="top">{tText(message)}</TooltipPopup>
     </Tooltip>
   );
   // A mixed selection keeps the real control with "Mixed" as its placeholder
@@ -396,20 +409,20 @@ export function SettingsRow({
     unavailable && control
       ? inertControl(
           !canWriteSettings
-            ? `This connection lacks permission to change settings on ${
-                context
+            ? tText("This connection lacks permission to change settings on {environment}.", {
+                environment: context
                   ? context.connectedEnvironments
                       .filter((target) => !writableIds.has(target.environmentId))
                       .map((target) => target.label)
-                      .join(", ") || "the selected environment"
-                  : (primaryEnvironment?.label ?? "the primary environment")
-              }.`
+                      .join(", ") || tText("the selected environment")
+                  : (primaryEnvironment?.label ?? tText("the primary environment")),
+              })
             : context
-              ? "Reconnect the selected environment to change this setting."
-              : PRIMARY_SETTINGS_UNAVAILABLE_MESSAGE,
+              ? tText("Reconnect the selected environment to change this setting.")
+              : tText(PRIMARY_SETTINGS_UNAVAILABLE_MESSAGE),
         )
       : environmentWide && control
-        ? inertControl("Environment-wide setting. Select an environment to change it.")
+        ? inertControl(tText("Environment-wide setting. Select an environment to change it."))
         : control;
   // Server rows get an indicator beside the title that opens the resolution
   // chain per target at every scope; client rows keep a plain status only.
@@ -425,16 +438,19 @@ export function SettingsRow({
       }),
     );
   const inheritance: { state: SettingInheritanceState; summary: string } = mixed
-    ? { state: "mixed", summary: "Mixed across selected environments" }
+    ? { state: "mixed", summary: tText("Mixed across selected environments") }
     : source === "project"
-      ? { state: "overridden", summary: "Overridden for this project" }
+      ? { state: "overridden", summary: tText("Overridden for this project") }
       : source === "t3.json"
-        ? { state: "inherited", summary: "Inherited from the repository's t3.json" }
+        ? { state: "inherited", summary: tText("Inherited from the repository's t3.json") }
         : source === "environment" && scopedKeys.length > 0
-          ? { state: "inherited", summary: `Inherited from ${inheritedFrom}` }
+          ? {
+              state: "inherited",
+              summary: tText("Inherited from {environment}", { environment: tText(inheritedFrom) }),
+            }
           : customized
-            ? { state: "environment", summary: "Set on the environment" }
-            : { state: "default", summary: "Built-in default" };
+            ? { state: "environment", summary: tText("Set on the environment") }
+            : { state: "default", summary: tText("Built-in default") };
   const renderedInheritance =
     context && serverScoped && settingKeys.length > 0 ? (
       <SettingInheritance
@@ -452,7 +468,7 @@ export function SettingsRow({
           : {})}
       />
     ) : null;
-  const renderedStatus = status;
+  const renderedStatus = localizedStatus;
 
   return (
     <div
@@ -469,7 +485,7 @@ export function SettingsRow({
       <div className="flex flex-col gap-3 @min-[32rem]/settings-row:grid @min-[32rem]/settings-row:grid-cols-[minmax(0,1fr)_minmax(10rem,auto)] @min-[32rem]/settings-row:items-center @min-[32rem]/settings-row:gap-8">
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex min-h-5 items-center gap-1.5">
-            <h3 className="text-sm font-medium text-foreground">{title}</h3>
+            <h3 className="text-sm font-medium text-foreground">{localizedTitle}</h3>
             {renderedInheritance ? (
               <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center">
                 {renderedInheritance}
@@ -479,9 +495,9 @@ export function SettingsRow({
               {renderedReset}
             </span>
           </div>
-          {description ? (
+          {localizedDescription ? (
             <p className="max-w-xl text-xs leading-normal text-muted-foreground/80">
-              {description}
+              {localizedDescription}
             </p>
           ) : null}
           {renderedStatus ? (
@@ -516,6 +532,9 @@ export function SettingResetButton({
   disabled?: boolean;
   onClick: () => void;
 }) {
+  const { tText } = useI18n();
+  const localizedLabel = tText(label);
+  const localizedTooltip = tText(tooltip);
   return (
     <Tooltip>
       <TooltipTrigger
@@ -523,7 +542,7 @@ export function SettingResetButton({
           <Button
             size="icon-micro"
             variant="ghost-muted"
-            aria-label={`Reset ${label} to default`}
+            aria-label={tText("Reset {label} to default", { label: localizedLabel })}
             disabled={disabled}
             onClick={(event) => {
               event.stopPropagation();
@@ -534,7 +553,7 @@ export function SettingResetButton({
           </Button>
         }
       />
-      <TooltipPopup side="top">{tooltip}</TooltipPopup>
+      <TooltipPopup side="top">{localizedTooltip}</TooltipPopup>
     </Tooltip>
   );
 }

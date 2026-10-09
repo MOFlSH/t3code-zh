@@ -62,15 +62,22 @@ URL selects the deployment.
 
 ## Desktop OAuth redirects
 
-Enable Clerk's Native API and add the desktop redirects to its SSO redirect allowlist:
+Enable Clerk's Native API and add the desktop redirects to its SSO redirect allowlist. The official app uses:
 
 ```text
 t3code-dev://app/
 t3code://app/
 ```
 
-Add the corresponding origin to the Clerk instance's Backend API `allowed_origins` array.
-Development uses `t3code-dev://app`; production uses `t3code://app`. Update the array with
+The Simplified Chinese Fork uses separate redirects:
+
+```text
+t3code-zh-cn-dev://app/
+t3code-zh-cn://app/
+```
+
+Add the corresponding origins to the Clerk instance's Backend API `allowed_origins` array.
+Development and production use the matching custom schemes shown above. Update the array with
 `PATCH https://api.clerk.com/v1/instance` using the Clerk secret key, preserving existing entries.
 The Clerk Electron integration handles token
 persistence and system-browser callback delivery.

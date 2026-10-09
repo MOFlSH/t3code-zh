@@ -5,14 +5,21 @@ import { CheckIcon, ChevronRightIcon } from "lucide-react";
 import type * as React from "react";
 
 import { cn } from "~/lib/utils";
+import { useI18n } from "~/i18n/i18n";
 import { buttonVariants } from "./button";
 
 const Menu = MenuPrimitive.Root;
 
 function MenuTrigger({ className, children, ...props }: MenuPrimitive.Trigger.Props) {
+  const { tText } = useI18n();
+  const localizedChildren = typeof children === "string" ? tText(children) : children;
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
-    <MenuPrimitive.Trigger className={className} data-slot="menu-trigger" {...props}>
-      {children}
+    <MenuPrimitive.Trigger className={className} data-slot="menu-trigger" {...localizedProps}>
+      {localizedChildren}
     </MenuPrimitive.Trigger>
   );
 }
@@ -76,12 +83,19 @@ function MenuItem({
   inset,
   density = "default",
   variant = "default",
+  children,
   ...props
 }: MenuPrimitive.Item.Props & {
   inset?: boolean;
   density?: "default" | "touch";
   variant?: "default" | "destructive" | "ghost";
 }) {
+  const { tText } = useI18n();
+  const localizedChildren = typeof children === "string" ? tText(children) : children;
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
     <MenuPrimitive.Item
       className={cn(
@@ -99,14 +113,18 @@ function MenuItem({
       data-inset={inset}
       data-slot="menu-item"
       data-variant={variant}
-      {...props}
-    />
+      {...localizedProps}
+    >
+      {localizedChildren}
+    </MenuPrimitive.Item>
   );
 }
 
 // Trim font leading so visible letters center with the icons in touch rows.
 // Symmetric padding keeps accents and descenders inside truncated labels.
-function MenuItemLabel({ className, ...props }: React.ComponentProps<"span">) {
+function MenuItemLabel({ className, children, ...props }: React.ComponentProps<"span">) {
+  const { tText } = useI18n();
+  const localizedChildren = typeof children === "string" ? tText(children) : children;
   return (
     <span
       data-slot="menu-item-label"
@@ -115,7 +133,9 @@ function MenuItemLabel({ className, ...props }: React.ComponentProps<"span">) {
         className,
       )}
       {...props}
-    />
+    >
+      {localizedChildren}
+    </span>
   );
 }
 
@@ -128,6 +148,12 @@ function MenuCheckboxItem({
 }: MenuPrimitive.CheckboxItem.Props & {
   variant?: "default" | "switch";
 }) {
+  const { tText } = useI18n();
+  const localizedChildren = typeof children === "string" ? tText(children) : children;
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
     <MenuPrimitive.CheckboxItem
       checked={checked}
@@ -139,11 +165,11 @@ function MenuCheckboxItem({
         className,
       )}
       data-slot="menu-checkbox-item"
-      {...props}
+      {...localizedProps}
     >
       {variant === "switch" ? (
         <>
-          <span className="col-start-1">{children}</span>
+          <span className="col-start-1">{localizedChildren}</span>
           <MenuPrimitive.CheckboxItemIndicator
             className="inset-shadow-[0_1px_--theme(--color-black/4%)] inline-flex h-[calc(var(--thumb-size)+2px)] w-[calc(var(--thumb-size)*2-2px)] shrink-0 items-center rounded-full p-px outline-none transition-[background-color,box-shadow] duration-200 [--thumb-size:--spacing(4)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background data-checked:bg-primary data-unchecked:bg-input data-disabled:opacity-64 sm:[--thumb-size:--spacing(3)]"
             keepMounted
@@ -168,7 +194,7 @@ function MenuCheckboxItem({
               <path d="M5.252 12.7 10.2 18.63 18.748 5.37" />
             </svg>
           </MenuPrimitive.CheckboxItemIndicator>
-          <span className="col-start-2">{children}</span>
+          <span className="col-start-2">{localizedChildren}</span>
         </>
       )}
     </MenuPrimitive.CheckboxItem>
@@ -187,6 +213,12 @@ function MenuRadioItem({
 }: MenuPrimitive.RadioItem.Props & {
   hideIndicator?: boolean;
 }) {
+  const { tText } = useI18n();
+  const localizedChildren = typeof children === "string" ? tText(children) : children;
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
     <MenuPrimitive.RadioItem
       className={cn(
@@ -194,9 +226,9 @@ function MenuRadioItem({
         className,
       )}
       data-slot="menu-radio-item"
-      {...props}
+      {...localizedProps}
     >
-      <span className="min-w-0 flex-1">{children}</span>
+      <span className="min-w-0 flex-1">{localizedChildren}</span>
     </MenuPrimitive.RadioItem>
   );
 }
@@ -221,10 +253,13 @@ function MenuRadioItemIndicator({
 function MenuGroupLabel({
   className,
   inset,
+  children,
   ...props
 }: MenuPrimitive.GroupLabel.Props & {
   inset?: boolean;
 }) {
+  const { tText } = useI18n();
+  const localizedChildren = typeof children === "string" ? tText(children) : children;
   return (
     <MenuPrimitive.GroupLabel
       className={cn(
@@ -234,7 +269,9 @@ function MenuGroupLabel({
       data-inset={inset}
       data-slot="menu-label"
       {...props}
-    />
+    >
+      {localizedChildren}
+    </MenuPrimitive.GroupLabel>
   );
 }
 
@@ -275,6 +312,12 @@ function MenuSubTrigger({
   inset?: boolean;
   density?: "default" | "touch";
 }) {
+  const { tText } = useI18n();
+  const localizedChildren = typeof children === "string" ? tText(children) : children;
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
     <MenuPrimitive.SubmenuTrigger
       className={cn(
@@ -290,9 +333,9 @@ function MenuSubTrigger({
       data-density={density}
       data-inset={inset}
       data-slot="menu-sub-trigger"
-      {...props}
+      {...localizedProps}
     >
-      {children}
+      {localizedChildren}
       <ChevronRightIcon className="-me-0.5 ms-auto opacity-80" />
     </MenuPrimitive.SubmenuTrigger>
   );

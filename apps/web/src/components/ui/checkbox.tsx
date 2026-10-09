@@ -3,8 +3,14 @@
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 
 import { cn } from "~/lib/utils";
+import { useI18n } from "~/i18n/i18n";
 
 function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
     <CheckboxPrimitive.Root
       className={cn(
@@ -12,7 +18,7 @@ function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
         className,
       )}
       data-slot="checkbox"
-      {...props}
+      {...localizedProps}
     >
       <CheckboxPrimitive.Indicator
         className="-inset-px absolute flex items-center justify-center rounded-[.25rem] text-primary-foreground data-unchecked:hidden data-checked:bg-primary data-indeterminate:text-foreground"

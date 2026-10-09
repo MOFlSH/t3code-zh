@@ -9,6 +9,7 @@ import { Button } from "../ui/button";
 import { Menu, MenuItem, MenuPopup, MenuTrigger } from "../ui/menu";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { composerFloatingLayerProps } from "./composerEventScope";
+import { useI18n } from "~/i18n/i18n";
 
 interface ComposerPendingApprovalActionsProps {
   requestId: RuntimeRequestId;
@@ -37,6 +38,20 @@ export const ComposerPendingApprovalActions = memo(function ComposerPendingAppro
   options = DEFAULT_APPROVAL_OPTIONS,
   onRespondToApproval,
 }: ComposerPendingApprovalActionsProps) {
+  const { t } = useI18n();
+  const labelForOption = (option: ProviderApprovalOption) => {
+    if (options !== DEFAULT_APPROVAL_OPTIONS) return option.label;
+    switch (option.decision) {
+      case "cancel":
+        return t("approval.cancel");
+      case "decline":
+        return t("approval.decline");
+      case "acceptForSession":
+        return t("approval.alwaysAllow");
+      case "accept":
+        return t("approval.approve");
+    }
+  };
   const primaryOptions = options.filter(
     (option) => option.decision === "decline" || option.decision === "accept",
   );
@@ -61,7 +76,7 @@ export const ComposerPendingApprovalActions = memo(function ComposerPendingAppro
             }}
           >
             {option.warning ? <TriangleAlertIcon className="size-3 shrink-0" /> : null}
-            <span className="max-w-40 truncate">{option.label}</span>
+            <span className="max-w-40 truncate">{labelForOption(option)}</span>
           </Button>
         );
         return option.warning ? (
@@ -77,7 +92,9 @@ export const ComposerPendingApprovalActions = memo(function ComposerPendingAppro
         <Menu>
           <MenuTrigger
             disabled={disabled || isResponding}
-            render={<Button size="icon-xs" variant="outline" aria-label="More approval options" />}
+            render={
+              <Button size="icon-xs" variant="outline" aria-label={t("approval.moreOptions")} />
+            }
           >
             <EllipsisIcon />
           </MenuTrigger>
@@ -96,7 +113,9 @@ export const ComposerPendingApprovalActions = memo(function ComposerPendingAppro
                   className="mb-1 last:mb-0"
                 >
                   {option.warning ? <TriangleAlertIcon className="size-3 text-warning" /> : null}
-                  <span className="min-w-0 whitespace-normal wrap-break-word">{option.label}</span>
+                  <span className="min-w-0 whitespace-normal wrap-break-word">
+                    {labelForOption(option)}
+                  </span>
                 </MenuItem>
               );
               return option.warning ? (

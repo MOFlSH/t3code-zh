@@ -4,6 +4,7 @@ import { NumberField as NumberFieldPrimitive } from "@base-ui/react/number-field
 import { MinusIcon, PlusIcon } from "lucide-react";
 import * as React from "react";
 import { cn } from "~/lib/utils";
+import { useI18n } from "~/i18n/i18n";
 
 export function NumberField({
   id,
@@ -13,6 +14,11 @@ export function NumberField({
 }: NumberFieldPrimitive.Root.Props & {
   size?: "sm" | "default" | "lg";
 }): React.ReactElement {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   const generatedId = React.useId();
   const fieldId = id ?? generatedId;
   return (
@@ -21,7 +27,7 @@ export function NumberField({
       data-size={size}
       data-slot="number-field"
       id={fieldId}
-      {...props}
+      {...localizedProps}
     />
   );
 }
@@ -46,6 +52,11 @@ export function NumberFieldDecrement({
   className,
   ...props
 }: NumberFieldPrimitive.Decrement.Props): React.ReactElement {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
     <NumberFieldPrimitive.Decrement
       className={cn(
@@ -53,7 +64,7 @@ export function NumberFieldDecrement({
         className,
       )}
       data-slot="number-field-decrement"
-      {...props}
+      {...localizedProps}
     >
       <MinusIcon />
     </NumberFieldPrimitive.Decrement>
@@ -64,6 +75,11 @@ export function NumberFieldIncrement({
   className,
   ...props
 }: NumberFieldPrimitive.Increment.Props): React.ReactElement {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
     <NumberFieldPrimitive.Increment
       className={cn(
@@ -71,7 +87,7 @@ export function NumberFieldIncrement({
         className,
       )}
       data-slot="number-field-increment"
-      {...props}
+      {...localizedProps}
     >
       <PlusIcon />
     </NumberFieldPrimitive.Increment>
@@ -82,6 +98,11 @@ export function NumberFieldInput({
   className,
   ...props
 }: NumberFieldPrimitive.Input.Props): React.ReactElement {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
     <NumberFieldPrimitive.Input
       className={cn(
@@ -89,7 +110,7 @@ export function NumberFieldInput({
         className,
       )}
       data-slot="number-field-input"
-      {...props}
+      {...localizedProps}
     />
   );
 }

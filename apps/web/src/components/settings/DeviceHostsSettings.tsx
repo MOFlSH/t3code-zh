@@ -21,12 +21,16 @@ import { updateDeviceHosts } from "./deviceHostsSettings.logic";
 import { DeviceHostEditor } from "./DeviceHostEditor";
 import { useHostConnectionChecks } from "./useHostConnectionChecks";
 import { deviceHostConnectionKey } from "./deviceHostConnectionChecks";
+import { useI18n } from "~/i18n/i18n";
 
 export function DeviceHostsSettings(props: { environmentId: EnvironmentId | null }) {
+  const { tText } = useI18n();
   const { scope, environments, connectedEnvironments } = useSettingsScope();
   const canConfigure = useEnvironmentScope(props.environmentId, AuthSettingsWriteScope);
   const projectScope = scope.kind === "project" || scope.kind === "checkout";
-  const update = useAtomCommand(serverEnvironment.updateSettings, { reportFailure: false });
+  const update = useAtomCommand(serverEnvironment.updateSettings, {
+    reportFailure: false,
+  });
   const [editing, setEditing] = useState<SshDeviceHostConfig | null>(null);
   const [originalHost, setOriginalHost] = useState<SshDeviceHostConfig | null>(null);
   const [busy, setBusy] = useState(false);
@@ -99,7 +103,7 @@ export function DeviceHostsSettings(props: { environmentId: EnvironmentId | null
             setEditing({ id: randomUUID(), label: "", target: "" });
           }}
         >
-          <PlusIcon className="size-3.5" /> Add host
+          <PlusIcon className="size-3.5" /> <span>{tText("Add host")}</span>
         </Button>
       }
     >
@@ -185,13 +189,14 @@ function DeviceHostList({
   checks: ReturnType<typeof useHostConnectionChecks>["checks"];
   testConnection: ReturnType<typeof useHostConnectionChecks>["testConnection"];
 }) {
+  const { tText } = useI18n();
   const { state } = useDeviceState(environmentId);
   const retry = useAtomCommand(deviceEnvironment.list);
   const [retrying, setRetrying] = useState<string | null>(null);
   return (
     <>
       {hosts.length === 0 ? (
-        <p className="py-2 text-sm text-muted-foreground">No device hosts.</p>
+        <p className="py-2 text-sm text-muted-foreground">{tText("No device hosts.")}</p>
       ) : null}
       {hosts.map((host) => {
         const status = state.hostStatuses[host.id];
@@ -315,9 +320,10 @@ function DeviceHostList({
                 disabled={busy || retrying !== null}
                 onClick={() => {
                   setRetrying(host.id);
-                  void retry({ environmentId, input: { retryHostId: host.id } }).finally(() =>
-                    setRetrying(null),
-                  );
+                  void retry({
+                    environmentId,
+                    input: { retryHostId: host.id },
+                  }).finally(() => setRetrying(null));
                 }}
               >
                 {retrying === host.id ? "Retrying…" : "Retry"}

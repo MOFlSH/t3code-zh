@@ -3,15 +3,22 @@
 import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import { cn } from "~/lib/utils";
+import { useI18n } from "~/i18n/i18n";
 
 const PopoverCreateHandle = PopoverPrimitive.createHandle;
 
 const Popover = PopoverPrimitive.Root;
 
 function PopoverTrigger({ className, children, ...props }: PopoverPrimitive.Trigger.Props) {
+  const { tText } = useI18n();
+  const localizedChildren = typeof children === "string" ? tText(children) : children;
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
-    <PopoverPrimitive.Trigger className={className} data-slot="popover-trigger" {...props}>
-      {children}
+    <PopoverPrimitive.Trigger className={className} data-slot="popover-trigger" {...localizedProps}>
+      {localizedChildren}
     </PopoverPrimitive.Trigger>
   );
 }

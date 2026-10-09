@@ -3,6 +3,7 @@
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
 
 import { cn } from "~/lib/utils";
+import { useI18n } from "~/i18n/i18n";
 import {
   DIALOG_BACKDROP_CLASS,
   DIALOG_MOBILE_SHEET_CLASS,
@@ -99,21 +100,27 @@ function AlertDialogFooter({
 }
 
 function AlertDialogTitle({ className, ...props }: AlertDialogPrimitive.Title.Props) {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props.children === "string" ? { ...props, children: tText(props.children) } : props;
   return (
     <AlertDialogPrimitive.Title
       className={cn("wrap-anywhere font-semibold text-xl leading-none", className)}
       data-slot="alert-dialog-title"
-      {...props}
+      {...localizedProps}
     />
   );
 }
 
 function AlertDialogDescription({ className, ...props }: AlertDialogPrimitive.Description.Props) {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props.children === "string" ? { ...props, children: tText(props.children) } : props;
   return (
     <AlertDialogPrimitive.Description
       className={cn("text-muted-foreground text-sm", className)}
       data-slot="alert-dialog-description"
-      {...props}
+      {...localizedProps}
     />
   );
 }

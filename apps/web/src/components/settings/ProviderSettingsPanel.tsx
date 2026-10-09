@@ -94,6 +94,7 @@ import { UsageProviderSettings } from "./UsageProviderSettings";
 import { ProviderSetupSection, readAntigravityAuthMethod } from "./ProviderSetupSection";
 import { ProviderAuthenticationSection } from "./ProviderAuthenticationSection";
 import { CodexSetupSection, CodexManagedRuntimeFields } from "./CodexSetupSection";
+import { resolveActiveSourceMessage, useI18n } from "~/i18n/i18n";
 import { readCodexSetupMode } from "./CodexSetupSection.logic";
 import { providerClients } from "./providerDriverMeta";
 import { searchableSetting } from "./settingsSearch";
@@ -156,6 +157,7 @@ function configuredBinaryPath(config: unknown): string {
 }
 
 function ProviderLastChecked({ lastCheckedAt }: { lastCheckedAt: string | null }) {
+  const { locale, tText } = useI18n();
   useRelativeTimeTick();
   const lastCheckedRelative = getRelativeTimeState(lastCheckedAt);
 
@@ -164,18 +166,30 @@ function ProviderLastChecked({ lastCheckedAt }: { lastCheckedAt: string | null }
   }
 
   if (lastCheckedRelative.status === "invalid") {
-    return <span>Checked unavailable</span>;
+    return <span>{tText("Checked unavailable")}</span>;
   }
+
+  const localizedRelativeValue = (() => {
+    if (locale !== "zh-CN") return lastCheckedRelative.value;
+    const match = /^(\d+)([mhd])$/u.exec(lastCheckedRelative.value);
+    if (!match) return tText(lastCheckedRelative.value);
+    const unitSource = { m: "minutes", h: "hours", d: "days" } as const;
+    return `${match[1]}${tText(unitSource[match[2] as keyof typeof unitSource])}`;
+  })();
 
   return (
     <span>
       {lastCheckedRelative.suffix ? (
         <>
-          Checked <span className="font-mono tabular-nums">{lastCheckedRelative.value}</span>{" "}
-          {lastCheckedRelative.suffix}
+          {tText("Checked")}{" "}
+          <span className="font-mono tabular-nums">{localizedRelativeValue}</span>
+          {locale === "zh-CN" ? null : " "}
+          {tText(lastCheckedRelative.suffix)}
         </>
       ) : (
-        <>Checked {lastCheckedRelative.value}</>
+        <>
+          {tText("Checked")} {tText(lastCheckedRelative.value)}
+        </>
       )}
     </span>
   );
@@ -561,6 +575,7 @@ export function EnvironmentProviderSettings({
    */
   readonly readOnly?: boolean;
 }) {
+  const tText = resolveActiveSourceMessage;
   const settings = useEnvironmentSettings(environmentId);
   const canWriteSettings = useEnvironmentScope(environmentId, AuthSettingsWriteScope);
   const canRefreshProviders = useEnvironmentScope(environmentId, AuthOrchestrationReadScope);
@@ -1124,13 +1139,13 @@ export function EnvironmentProviderSettings({
                     size="icon-xs"
                     variant="ghost-muted"
                     onClick={() => setIsAddInstanceDialogOpen(true)}
-                    aria-label="Add provider"
+                    aria-label={tText("Add provider")}
                   >
                     <PlusIcon />
                   </Button>
                 }
               />
-              <TooltipPopup side="top">Add provider</TooltipPopup>
+              <TooltipPopup side="top">{tText("Add provider")}</TooltipPopup>
             </Tooltip>
           ) : null
         }
@@ -1148,10 +1163,10 @@ export function EnvironmentProviderSettings({
                     onClick={() => void refreshProviders()}
                   >
                     <RefreshIcon refreshing={isRefreshingProviders} />
-                    <span className="sr-only">Refresh provider status</span>
+                    <span className="sr-only">{tText("Refresh provider status")}</span>
                     <span className="hidden min-w-0 truncate sm:inline">
                       {isRefreshingProviders ? (
-                        "Refreshing providers"
+                        tText("Refreshing providers")
                       ) : (
                         <ProviderLastChecked lastCheckedAt={lastCheckedAt} />
                       )}
@@ -1159,7 +1174,7 @@ export function EnvironmentProviderSettings({
                   </Button>
                 }
               />
-              <TooltipPopup side="top">Refresh provider status</TooltipPopup>
+              <TooltipPopup side="top">{tText("Refresh provider status")}</TooltipPopup>
             </Tooltip>
           </div>
         }
@@ -1197,7 +1212,7 @@ export function EnvironmentProviderSettings({
                     onClick={() => setIsAddInstanceDialogOpen(true)}
                   >
                     <PlusIcon className="size-4 shrink-0" />
-                    Add provider
+                    {tText("Add provider")}
                   </button>
                 ) : null}
               </div>
@@ -1212,8 +1227,8 @@ export function EnvironmentProviderSettings({
             ) : (
               <div className="p-6 text-sm text-muted-foreground">
                 {targetInstanceMissing
-                  ? "This provider instance is no longer available on this device."
-                  : "No providers configured."}
+                  ? tText("This provider instance is no longer available on this device.")
+                  : tText("No providers configured.")}
               </div>
             )}
           </div>
@@ -1234,11 +1249,11 @@ export function EnvironmentProviderSettings({
           id={searchableSetting("provider-health-check-interval").id}
           title={
             <span className="inline-flex items-center gap-1.5">
-              {searchableSetting("provider-health-check-interval").title}
+              {tText(searchableSetting("provider-health-check-interval").title)}
               <PolicyTooltip>
-                This interval is configured here, then the shared Background activity policy decides
-                whether provider probes may run when the timer fires. Custom intervals appear as
-                Advanced in General settings.
+                {tText(
+                  "This interval is configured here, then the shared Background activity policy decides whether provider probes may run when the timer fires. Custom intervals appear as Advanced in General settings.",
+                )}
               </PolicyTooltip>
             </span>
           }
@@ -1299,7 +1314,7 @@ export function EnvironmentProviderSettings({
                   <NumberFieldIncrement aria-label="Increase provider health check interval" />
                 </NumberFieldGroup>
               </NumberField>
-              <span className="text-xs text-muted-foreground">seconds</span>
+              <span className="text-xs text-muted-foreground">{tText("seconds")}</span>
             </div>
           }
         />

@@ -4,18 +4,29 @@ import { Radio as RadioPrimitive } from "@base-ui/react/radio";
 import { RadioGroup as RadioGroupPrimitive } from "@base-ui/react/radio-group";
 
 import { cn } from "~/lib/utils";
+import { useI18n } from "~/i18n/i18n";
 
 function RadioGroup({ className, ...props }: RadioGroupPrimitive.Props) {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
     <RadioGroupPrimitive
       className={cn("flex flex-col gap-3", className)}
       data-slot="radio-group"
-      {...props}
+      {...localizedProps}
     />
   );
 }
 
 function Radio({ className, ...props }: RadioPrimitive.Root.Props) {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
     <RadioPrimitive.Root
       className={cn(
@@ -23,7 +34,7 @@ function Radio({ className, ...props }: RadioPrimitive.Root.Props) {
         className,
       )}
       data-slot="radio"
-      {...props}
+      {...localizedProps}
     >
       <RadioPrimitive.Indicator
         className="-inset-px absolute flex size-4.5 items-center justify-center rounded-full before:size-2 before:rounded-full before:bg-primary-foreground data-unchecked:hidden data-checked:bg-primary sm:size-4 sm:before:size-1.5"

@@ -38,6 +38,11 @@ export interface ProviderUpdateToastView {
   readonly dismissAfterVisibleMs?: number;
 }
 
+export type ProviderUpdateTextTranslator = (
+  source: string,
+  values?: Readonly<Record<string, string | number>>,
+) => string;
+
 /**
  * Terminal update phases — outcomes that are safe to persist as a one-shot row
  * result. A non-terminal ("initial"/"running") snapshot never re-polls itself,
@@ -69,6 +74,132 @@ const PROVIDER_UPDATE_SUCCESS_VISIBLE_MS = 3_000;
 
 function formatVersion(value: string): string {
   return value.startsWith("v") ? value : `v${value}`;
+}
+
+function localizeProviderList(value: string): string {
+  return value
+    .replace(/, and /g, "、")
+    .replace(/ and /g, " 和 ")
+    .replace(/, /g, "、");
+}
+
+/**
+ * Provider update views are assembled by pure reducers so they can be tested
+ * without React. Translate the complete messages at the rendering boundary,
+ * including the small set of messages that carry provider names or versions.
+ * Unknown server-provided error text is deliberately left untouched.
+ */
+export function localizeProviderUpdateText(
+  source: string,
+  translate: ProviderUpdateTextTranslator,
+): string {
+  const literal = translate(source);
+  if (literal !== source) return literal;
+
+  let match = /^Update Available: (.+) (v[^\s]+)$/.exec(source);
+  if (match) {
+    return translate("Update Available: {provider} {version}", {
+      provider: match[1]!,
+      version: match[2]!,
+    });
+  }
+  match = /^Updates Available: (\d+) providers$/.exec(source);
+  if (match) {
+    return translate("Updates Available: {count} providers", { count: Number(match[1]) });
+  }
+  match = /^(.+) updated: (v[^\s]+)$/.exec(source);
+  if (match) {
+    return translate("{provider} updated: {version}", {
+      provider: match[1]!,
+      version: match[2]!,
+    });
+  }
+  match = /^(.+) updated$/.exec(source);
+  if (match) {
+    return translate("{provider} updated", { provider: match[1]! });
+  }
+  match = /^(.+) (v[^\s]+) update failed$/.exec(source);
+  if (match) {
+    return translate("{provider} {version} update failed", {
+      provider: match[1]!,
+      version: match[2]!,
+    });
+  }
+  match = /^(.+) update failed$/.exec(source);
+  if (match) {
+    return translate("{provider} update failed", { provider: match[1]! });
+  }
+  match = /^Updating (\d+) providers$/.exec(source);
+  if (match) {
+    return translate("Updating {count} providers", { count: Number(match[1]) });
+  }
+  match = /^Updating (.+)$/.exec(source);
+  if (match && match[1] !== "provider" && match[1] !== "providers") {
+    return translate("Updating {provider}", { provider: match[1]! });
+  }
+  match = /^(\d+) providers updated$/.exec(source);
+  if (match) {
+    return translate("{count} providers updated", { count: Number(match[1]) });
+  }
+  match = /^(\d+) of (\d+) provider updates failed$/.exec(source);
+  if (match) {
+    return translate("{failed} of {total} provider updates failed", {
+      failed: Number(match[1]),
+      total: Number(match[2]),
+    });
+  }
+  match = /^(\d+) providers still need updates$/.exec(source);
+  if (match) {
+    return translate("{count} providers still need updates", { count: Number(match[1]) });
+  }
+  match = /^(.+) can be updated from provider settings\.$/.exec(source);
+  if (match) {
+    return translate("{providers} can be updated from provider settings.", {
+      providers: localizeProviderList(match[1]!),
+    });
+  }
+  match = /^(.+) (still appears|still appear) outdated\. Check provider settings for details\.$/.exec(
+    source,
+  );
+  if (match) {
+    return translate(
+      match[2] === "still appears"
+        ? "{providers} still appears outdated. Check provider settings for details."
+        : "{providers} still appear outdated. Check provider settings for details.",
+      { providers: localizeProviderList(match[1]!) },
+    );
+  }
+  match = /^(.+) failed to update\. Check provider settings for details\.$/.exec(source);
+  if (match) {
+    return translate("{providers} failed to update. Check provider settings for details.", {
+      providers: localizeProviderList(match[1]!),
+    });
+  }
+  match = /^(.+) update in progress\.$/.exec(source);
+  if (match) {
+    return translate("{providers} update in progress.", {
+      providers: localizeProviderList(match[1]!),
+    });
+  }
+  match = /^(.+) updates are in progress\.$/.exec(source);
+  if (match) {
+    return translate("{providers} updates are in progress.", {
+      providers: localizeProviderList(match[1]!),
+    });
+  }
+
+  return literal;
+}
+
+export function localizeProviderUpdateToastView(
+  view: ProviderUpdateToastView,
+  translate: ProviderUpdateTextTranslator,
+): ProviderUpdateToastView {
+  return {
+    ...view,
+    title: localizeProviderUpdateText(view.title, translate),
+    description: localizeProviderUpdateText(view.description, translate),
+  };
 }
 
 function chooseRepresentativeProvider(

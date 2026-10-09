@@ -13,6 +13,7 @@ import {
 } from "../ui/combobox";
 import { SelectButton } from "../ui/select";
 import { stackedThreadToast, toastManager } from "../ui/toast";
+import { useI18n } from "~/i18n/i18n";
 
 const DEFAULT_FONT_VALUE = "__default__";
 
@@ -121,6 +122,7 @@ export function FontFamilyPicker({
   initialOpen?: boolean;
   onSelect: (family: string) => void;
 }) {
+  const { tText } = useI18n();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   // Open after mount rather than mounting open: a popup that first renders in
@@ -165,8 +167,10 @@ export function FontFamilyPicker({
       toastManager.add(
         stackedThreadToast({
           type: "error",
-          title: `"${value}" isn't monospace`,
-          description: "Code and terminal need a fixed-width font, so the current font was kept.",
+          title: tText(`"{font}" isn't monospace`, { font: value }),
+          description: tText(
+            "Code and terminal need a fixed-width font, so the current font was kept.",
+          ),
         }),
       );
       return;
@@ -184,7 +188,9 @@ export function FontFamilyPicker({
             {family}
           </span>
           <span className="flex shrink-0 items-center gap-1.5">
-            {isDefault ? <span className="text-3xs text-muted-foreground/60">default</span> : null}
+            {isDefault ? (
+              <span className="text-3xs text-muted-foreground/60">{tText("default")}</span>
+            ) : null}
             {item === selectedValue ? (
               <CheckIcon className="size-3.5 text-muted-foreground" />
             ) : null}
@@ -210,7 +216,10 @@ export function FontFamilyPicker({
         // Keyboard highlights must pull the virtualized row into view, or
         // arrow keys walk past the rendered window and navigate blind.
         if (!open || eventDetails.index < 0 || eventDetails.reason !== "keyboard") return;
-        void listRef.current?.scrollIndexIntoView?.({ index: eventDetails.index, animated: false });
+        void listRef.current?.scrollIndexIntoView?.({
+          index: eventDetails.index,
+          animated: false,
+        });
       }}
     >
       <ComboboxTrigger aria-label={ariaLabel} render={<SelectButton size="sm" />}>
@@ -218,12 +227,12 @@ export function FontFamilyPicker({
       </ComboboxTrigger>
       <ComboboxPopup align="end" className="flex w-72 flex-col">
         <ComboboxSearchInput
-          placeholder="Search fonts…"
+          placeholder={tText("Search fonts…")}
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-          <ComboboxEmpty>No fonts found.</ComboboxEmpty>
+          <ComboboxEmpty>{tText("No fonts found.")}</ComboboxEmpty>
           <div className="relative min-h-0 max-h-72 w-full flex-1 overflow-hidden">
             <ComboboxListVirtualized>
               <LegendList<string>
