@@ -1632,10 +1632,15 @@ html[data-theme-id="t3-chat"] [data-app-sidebar] {
   );
 }
 
-body {
+html,
+body,
+#root {
   /* Reference the theme token (not a literal stack) so the Settings ->
      Appearance runtime override of --font-sans reaches all interface text. */
   font-family: var(--font-sans);
+}
+
+body {
   margin: 0;
   padding: 0;
 }

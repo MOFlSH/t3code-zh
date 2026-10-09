@@ -115,6 +115,12 @@ export function applyAppearanceFontVariables(
     }
   }
 
+  // Keep the computed family explicit on the document root as well as on the
+  // theme token. This makes portals and native-looking overlays follow the
+  // selected interface family even when an intermediate app shell resets its
+  // inherited font declaration.
+  root.style.fontFamily = "var(--font-sans)";
+
   root.style.fontSize = `${clampInterfaceFontSize(preferences.sizeInterface)}px`;
   root.style.setProperty("--font-size-prompt", `${clampPromptFontSize(preferences.sizePrompt)}px`);
   const code = clampCodeFontSize(preferences.sizeCode);

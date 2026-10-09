@@ -126,7 +126,11 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
   const setModel = (value: ModelSelection | null) => {
     const reason = value ? modelDisabledReason(value.instanceId, value.model) : null;
     if (reason) {
-      toastManager.add({ type: "error", title: "Default model not saved", description: reason });
+      toastManager.add({
+        type: "error",
+        title: "Default model not saved",
+        description: reason,
+      });
       return;
     }
     updateSettings({ defaultModelSelection: value });
@@ -172,7 +176,10 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
                 if (representative)
                   void navigate({
                     to: "/settings/providers",
-                    search: { environmentId: representative.environmentId, instanceId },
+                    search: {
+                      environmentId: representative.environmentId,
+                      instanceId,
+                    },
                   });
               }}
               onInstanceModelChange={(instanceId, model) =>
@@ -481,7 +488,7 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
                   </SelectValue>
                 </SelectTrigger>
                 <SelectPopup align="end" alignItemWithTrigger={false}>
-                  <SelectItem value="last">Last selected</SelectItem>
+                  <SelectItem value="last">{tText("Last selected")}</SelectItem>
                   <SelectItem value="merge">{PULL_REQUEST_MERGE_METHOD_LABELS.merge}</SelectItem>
                   <SelectItem value="squash">{PULL_REQUEST_MERGE_METHOD_LABELS.squash}</SelectItem>
                   <SelectItem value="rebase">{PULL_REQUEST_MERGE_METHOD_LABELS.rebase}</SelectItem>
@@ -500,8 +507,10 @@ export function ProjectDefaultsSettings({ category }: { category: ProjectSetting
             title="Agent browser access"
             description={
               isProjectScope
-                ? "Allow agents in this project to use the shared browser. Applies when the agent session next starts."
-                : "Allow agents to use the shared browser. Projects can override it."
+                ? tText(
+                    "Allow agents in this project to use the shared browser. Applies when the agent session next starts.",
+                  )
+                : tText("Allow agents to use the shared browser. Projects can override it.")
             }
             resetAction={
               settings.enableAgentBrowserAccess !==

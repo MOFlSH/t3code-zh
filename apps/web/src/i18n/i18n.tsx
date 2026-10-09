@@ -51,6 +51,17 @@ export function resolveSourceMessage(
   return formatMessage(message ?? source, values);
 }
 
+// Keep a hook-free view of the active locale for the few settings helpers that
+// are also exercised as plain element factories by the environment tests.
+// React-rendered components should continue to prefer useI18n().
+// Plain element-factory tests do not mount I18nProvider. Keep their source
+// text stable until the real provider publishes the selected locale.
+let activeLocale: Locale = "en";
+
+export function resolveActiveSourceMessage(source: string, values?: MessageValues): string {
+  return resolveSourceMessage(activeLocale, source, values);
+}
+
 function readStoredLocale(): Locale {
   if (typeof window === "undefined") return DEFAULT_LOCALE;
   try {
@@ -78,6 +89,7 @@ const I18nContext = createContext(defaultContext);
 
 export function I18nProvider({ children }: { readonly children: ReactNode }) {
   const [locale, setCurrentLocale] = useState(readStoredLocale);
+  activeLocale = locale;
 
   const setLocale = useCallback((nextLocale: Locale) => {
     setCurrentLocale(nextLocale);

@@ -118,6 +118,7 @@ import {
 } from "./settingsLayout";
 import { searchableSetting } from "./settingsSearch";
 import { ProjectDefaultsSettings } from "./ProjectDefaultsSettings";
+import { useI18n } from "~/i18n/i18n";
 import { useSettingsScope } from "./SettingsScopeContext";
 import { BrowserImportWizard, type WizardTarget } from "./BrowserImportWizard";
 import type { ImportOutcome } from "./browserImportWizard.logic";
@@ -246,6 +247,7 @@ const rotateViewport = (
 });
 
 function BrowserViewportSetting({ disabled }: { readonly disabled: boolean }) {
+  const { tText } = useI18n();
   const viewport = useClientSettings((settings) => settings.browserDefaultViewport);
   const updateSettings = useUpdatePrimarySettings();
 
@@ -302,7 +304,11 @@ function BrowserViewportSetting({ disabled }: { readonly disabled: boolean }) {
         !disabled && viewport._tag !== DEFAULT_BROWSER_VIEWPORT._tag ? (
           <SettingResetButton
             label="default browser viewport"
-            onClick={() => updateSettings({ browserDefaultViewport: DEFAULT_BROWSER_VIEWPORT })}
+            onClick={() =>
+              updateSettings({
+                browserDefaultViewport: DEFAULT_BROWSER_VIEWPORT,
+              })
+            }
           />
         ) : null
       }
@@ -321,10 +327,10 @@ function BrowserViewportSetting({ disabled }: { readonly disabled: boolean }) {
               <SelectValue>{viewportSelectLabel(viewport)}</SelectValue>
             </SelectTrigger>
             <SelectPopup align="end" alignItemWithTrigger={false}>
-              <SelectItem value={FILL_VALUE}>Fill panel</SelectItem>
-              <SelectItem value={RESPONSIVE_VALUE}>Responsive</SelectItem>
+              <SelectItem value={FILL_VALUE}>{tText("Fill panel")}</SelectItem>
+              <SelectItem value={RESPONSIVE_VALUE}>{tText("Responsive")}</SelectItem>
               <SelectGroup>
-                <SelectGroupLabel>Standard</SelectGroupLabel>
+                <SelectGroupLabel>{tText("Standard")}</SelectGroupLabel>
                 {PREVIEW_VIEWPORT_PRESETS.map((preset) => (
                   <SelectItem key={preset.id} value={preset.id}>
                     <span className="flex w-full items-center justify-between gap-5">
@@ -382,14 +388,16 @@ function BrowserViewportSetting({ disabled }: { readonly disabled: boolean }) {
                         presentedSize.height >= presentedSize.width ? "landscape" : "portrait"
                       }`}
                       onClick={() =>
-                        updateSettings({ browserDefaultViewport: rotateViewport(sized) })
+                        updateSettings({
+                          browserDefaultViewport: rotateViewport(sized),
+                        })
                       }
                     >
                       <ScreenRotationIcon />
                     </Button>
                   }
                 />
-                <TooltipPopup side="top">Rotate</TooltipPopup>
+                <TooltipPopup side="top">{tText("Rotate")}</TooltipPopup>
               </Tooltip>
             </div>
           ) : null}
@@ -412,7 +420,9 @@ function BrowserZoomSetting({ disabled }: { readonly disabled: boolean }) {
           <SettingResetButton
             label="default browser zoom"
             onClick={() =>
-              updateSettings({ browserDefaultZoomFactor: DEFAULT_PREVIEW_ZOOM_FACTOR })
+              updateSettings({
+                browserDefaultZoomFactor: DEFAULT_PREVIEW_ZOOM_FACTOR,
+              })
             }
           />
         ) : null
@@ -454,7 +464,11 @@ function BrowserAppearanceSetting({ disabled }: { readonly disabled: boolean }) 
         !disabled && appearance !== DEFAULT_PREVIEW_APPEARANCE ? (
           <SettingResetButton
             label="default browser appearance"
-            onClick={() => updateSettings({ browserDefaultAppearance: DEFAULT_PREVIEW_APPEARANCE })}
+            onClick={() =>
+              updateSettings({
+                browserDefaultAppearance: DEFAULT_PREVIEW_APPEARANCE,
+              })
+            }
           />
         ) : null
       }
@@ -503,7 +517,9 @@ function BrowserRecordingInputSettings({ disabled }: { readonly disabled: boolea
             checked={showKeys}
             aria-label="Show key presses in recordings"
             onCheckedChange={(checked) =>
-              updateSettings({ browserRecordingShowKeyPresses: Boolean(checked) })
+              updateSettings({
+                browserRecordingShowKeyPresses: Boolean(checked),
+              })
             }
           />
         }
@@ -517,7 +533,9 @@ function BrowserRecordingInputSettings({ disabled }: { readonly disabled: boolea
             checked={showMouse}
             aria-label="Show mouse presses in recordings"
             onCheckedChange={(checked) =>
-              updateSettings({ browserRecordingShowMousePresses: Boolean(checked) })
+              updateSettings({
+                browserRecordingShowMousePresses: Boolean(checked),
+              })
             }
           />
         }
@@ -539,7 +557,9 @@ function BrowserRecordingFrameRateSetting({ disabled }: { readonly disabled: boo
           <SettingResetButton
             label="browser recording frame rate"
             onClick={() =>
-              updateSettings({ browserRecordingFrameRate: DEFAULT_BROWSER_RECORDING_FRAME_RATE })
+              updateSettings({
+                browserRecordingFrameRate: DEFAULT_BROWSER_RECORDING_FRAME_RATE,
+              })
             }
           />
         ) : null
@@ -649,6 +669,7 @@ function DeviceIntegrationControls({
   enabled: boolean;
   agentAccessEnabled: boolean;
 }) {
+  const { tText } = useI18n();
   const canConfigure = useEnvironmentScope(environmentId, AuthSettingsWriteScope);
   const { state, loaded } = useDeviceState(environmentId);
   const { scope, environments, connectedEnvironments } = useSettingsScope();
@@ -657,7 +678,9 @@ function DeviceIntegrationControls({
   const anyHubEnabled = connectedEnvironments.some(
     (environment) => environment.serverConfig?.settings.enableDeviceSupport,
   );
-  const configure = useAtomCommand(deviceEnvironment.configure, { reportFailure: false });
+  const configure = useAtomCommand(deviceEnvironment.configure, {
+    reportFailure: false,
+  });
   const list = useAtomCommand(deviceEnvironment.list, { reportFailure: false });
   const [pending, setPending] = useState<
     "hub" | "check" | "agent" | "update-hub" | "update-agent" | null
@@ -695,7 +718,10 @@ function DeviceIntegrationControls({
           }
           return configure({
             environmentId: environment.environmentId,
-            input: { ...input, ...(input.enabled ? { onboardingCompleted: true } : {}) },
+            input: {
+              ...input,
+              ...(input.enabled ? { onboardingCompleted: true } : {}),
+            },
           });
         }),
       );
@@ -715,9 +741,10 @@ function DeviceIntegrationControls({
     }
   };
 
-  const [updateError, setUpdateError] = useState<{ tool: "hub" | "agent"; message: string } | null>(
-    null,
-  );
+  const [updateError, setUpdateError] = useState<{
+    tool: "hub" | "agent";
+    message: string;
+  } | null>(null);
   const localTools = state.hosts.find((host) => host.kind === "local")?.tools;
   const versionActions = (tool: "hub" | "agent") => {
     const version = localTools?.[tool];
@@ -738,14 +765,17 @@ function DeviceIntegrationControls({
                     if (result._tag === "Failure")
                       setUpdateError({
                         tool,
-                        message:
-                          "Update failed. Check this host's network connection and try again.",
+                        message: tText(
+                          "Update failed. Check this host’s network connection and try again.",
+                        ),
                       });
                   })
                   .finally(() => setPending(null));
               }}
             >
-              {pending === `update-${tool}` ? "Updating…" : `Update to v${version.requiredVersion}`}
+              {pending === `update-${tool}`
+                ? tText("Updating…")
+                : tText("Update to v{version}", { version: version.requiredVersion })}
             </Button>
           ) : null}
           {state.supportsToolInspection ? (
@@ -756,12 +786,13 @@ function DeviceIntegrationControls({
               onClick={() => {
                 if (!environmentId) return;
                 setPending("check");
-                void list({ environmentId, input: { inspectOnly: true } }).finally(() =>
-                  setPending(null),
-                );
+                void list({
+                  environmentId,
+                  input: { inspectOnly: true },
+                }).finally(() => setPending(null));
               }}
             >
-              {pending === "check" ? "Checking…" : "Check versions"}
+              {pending === "check" ? tText("Checking…") : tText("Check versions")}
             </Button>
           ) : null}
         </div>
@@ -841,7 +872,7 @@ function DeviceIntegrationControls({
                   void list({ environmentId, input: {} }).finally(() => setPending(null));
                 }}
               >
-                {pending === "check" ? "Checking…" : "Refresh"}
+                {pending === "check" ? tText("Checking…") : tText("Refresh")}
               </Button>
             }
           />
@@ -872,8 +903,12 @@ function DeviceIntegrationControls({
               aria-label="Agent device access"
               onCheckedChange={(checked) =>
                 projectScope
-                  ? updateSettings({ enableAgentDeviceAccess: Boolean(checked) })
-                  : void update("agent", { agentAccessEnabled: Boolean(checked) })
+                  ? updateSettings({
+                      enableAgentDeviceAccess: Boolean(checked),
+                    })
+                  : void update("agent", {
+                      agentAccessEnabled: Boolean(checked),
+                    })
               }
             />
           </>
@@ -881,7 +916,10 @@ function DeviceIntegrationControls({
       />
       {environmentId ? (
         <DeviceHostUpdates
-          state={{ ...state, hosts: state.hosts.filter((host) => host.kind === "local") }}
+          state={{
+            ...state,
+            hosts: state.hosts.filter((host) => host.kind === "local"),
+          }}
           environmentId={environmentId}
         />
       ) : null}
@@ -941,6 +979,7 @@ function BrowserAutoShowFloatingPreviewSetting({ disabled }: { readonly disabled
  * clears `browserRunning`), so a value cached at mount would go stale.
  */
 function BrowserProfilesSetting({ disabled }: { readonly disabled: boolean }) {
+  const { tText } = useI18n();
   const userProfiles = useClientSettings((settings) => settings.browserProfiles);
   const defaultProfileId = useClientSettings((settings) => settings.browserDefaultProfileId);
   const settingsHydrated = useClientSettingsHydrated();
@@ -969,7 +1008,10 @@ function BrowserProfilesSetting({ disabled }: { readonly disabled: boolean }) {
           serverConfigs.get(environmentId)?.environment.capabilities.serverBrowser === true,
       ),
     clear: async (environmentId, profileId) => {
-      const result = await runClearServerProfile({ environmentId, input: { profileId } });
+      const result = await runClearServerProfile({
+        environmentId,
+        input: { profileId },
+      });
       if (result._tag === "Failure") throw squashAtomCommandFailure(result);
     },
   };
@@ -1002,7 +1044,11 @@ function BrowserProfilesSetting({ disabled }: { readonly disabled: boolean }) {
     const taken = new Set(resolvedProfiles.map((profile) => profile.name));
     let name = baseName;
     for (let index = 2; taken.has(name); index += 1) name = `${baseName} ${index}`;
-    const profile = { id: `profile-${randomUUID()}`, name, kind: "persistent" as const };
+    const profile = {
+      id: `profile-${randomUUID()}`,
+      name,
+      kind: "persistent" as const,
+    };
     updateSettings({ browserProfiles: [...currentProfiles, profile] });
     return profile;
   };
@@ -1036,10 +1082,16 @@ function BrowserProfilesSetting({ disabled }: { readonly disabled: boolean }) {
       serverProfileData,
     )
       .then(() => {
-        toastManager.add({ type: "success", title: `Cleared ${name}'s cookies and cache` });
+        toastManager.add({
+          type: "success",
+          title: `Cleared ${name}'s cookies and cache`,
+        });
       })
       .catch(() => {
-        toastManager.add({ type: "error", title: `Could not clear ${name}'s data` });
+        toastManager.add({
+          type: "error",
+          title: `Could not clear ${name}'s data`,
+        });
       });
   };
 
@@ -1104,7 +1156,10 @@ function BrowserProfilesSetting({ disabled }: { readonly disabled: boolean }) {
   const runWizardImport = async (
     source: BrowserImportSource,
     environmentId: EnvironmentId,
-    input: { readonly sourceProfileDirectory: string; readonly target: WizardTarget },
+    input: {
+      readonly sourceProfileDirectory: string;
+      readonly target: WizardTarget;
+    },
   ): Promise<ImportOutcome> => {
     if (!previewBridge) return { kind: "blocked", reason: "sessionUnavailable" };
     if (!settingsHydrated) return { kind: "blocked", reason: "sessionUnavailable" };
@@ -1160,7 +1215,11 @@ function BrowserProfilesSetting({ disabled }: { readonly disabled: boolean }) {
                 ...current,
                 browserProfiles: [
                   ...current.browserProfiles,
-                  { id: input.target.profileId, name, kind: "persistent" as const },
+                  {
+                    id: input.target.profileId,
+                    name,
+                    kind: "persistent" as const,
+                  },
                 ],
               };
             });
@@ -1237,25 +1296,25 @@ function BrowserProfilesSetting({ disabled }: { readonly disabled: boolean }) {
             }
           >
             <PlusIcon />
-            Add profile
+            <span>{tText("Add profile")}</span>
           </MenuTrigger>
           <MenuPopup align="end">
             <MenuItem
               disabled={!settingsHydrated || atProfileLimit}
               onClick={() => createProfile("New profile")}
             >
-              Blank profile
+              {tText("Blank profile")}
             </MenuItem>
             {atProfileLimit ? (
-              <MenuItem disabled>You&rsquo;ve reached the profile limit</MenuItem>
+              <MenuItem disabled>{tText("You’ve reached the profile limit")}</MenuItem>
             ) : null}
             <MenuSeparator />
             <MenuGroup>
-              <MenuGroupLabel>Import from</MenuGroupLabel>
+              <MenuGroupLabel>{tText("Import from")}</MenuGroupLabel>
               {sources === null ? (
-                <MenuItem disabled>Looking for browsers…</MenuItem>
+                <MenuItem disabled>{tText("Looking for browsers…")}</MenuItem>
               ) : importableSources.length === 0 ? (
-                <MenuItem disabled>No supported browsers found</MenuItem>
+                <MenuItem disabled>{tText("No supported browsers found")}</MenuItem>
               ) : (
                 // Every source is a plain row — running, needs-permission and
                 // ready all look the same here. The wizard picks up whatever
@@ -1282,7 +1341,9 @@ function BrowserProfilesSetting({ disabled }: { readonly disabled: boolean }) {
                     </MenuItem>
                   ))}
                   {primaryEnvironment == null ? (
-                    <MenuItem disabled>Connect to an environment to import cookies</MenuItem>
+                    <MenuItem disabled>
+                      {tText("Connect to an environment to import cookies")}
+                    </MenuItem>
                   ) : null}
                 </>
               )}
@@ -1337,7 +1398,7 @@ function BrowserProfilesSetting({ disabled }: { readonly disabled: boolean }) {
                 {/* Dimmed with the rest of the row, whose controls are all disabled. */}
                 {isDefault ? (
                   <span className={cn("flex", profileWritesDisabled && "opacity-64")}>
-                    <Badge>Default</Badge>
+                    <Badge>{tText("Default")}</Badge>
                   </span>
                 ) : null}
               </span>
@@ -1363,7 +1424,7 @@ function BrowserProfilesSetting({ disabled }: { readonly disabled: boolean }) {
                       }
                     }}
                   >
-                    Set as default
+                    {tText("Set as default")}
                   </MenuItem>
                   <MenuItem
                     disabled={!settingsHydrated || !removalAvailable}
@@ -1485,7 +1546,10 @@ function BrowserProfilesSetting({ disabled }: { readonly disabled: boolean }) {
         <BrowserImportWizard
           source={importSession.source}
           destinationEnvironmentName={importSession.environmentName}
-          targetProfiles={listedProfiles.map((profile) => ({ id: profile.id, name: profile.name }))}
+          targetProfiles={listedProfiles.map((profile) => ({
+            id: profile.id,
+            name: profile.name,
+          }))}
           canCreateProfile={settingsHydrated && !atProfileLimit}
           onImport={(input) =>
             runWizardImport(importSession.source, importSession.environmentId, input)

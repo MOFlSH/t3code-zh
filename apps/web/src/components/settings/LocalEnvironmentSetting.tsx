@@ -15,10 +15,12 @@ import { Spinner } from "../ui/spinner";
 import { Switch } from "../ui/switch";
 import { SettingsRow } from "./settingsLayout";
 import { searchableSetting } from "./settingsSearch";
+import { useI18n } from "~/i18n/i18n";
 
 // Toggling relaunches the desktop app, so the switch only reflects the value
 // this process started with; there is no live state to keep in sync.
 export function LocalEnvironmentSetting() {
+  const { tText } = useI18n();
   const setEnabled = window.desktopBridge?.setLocalEnvironmentEnabled;
   const [enabled] = useState(() => !isLocalEnvironmentDisabled());
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -66,18 +68,20 @@ export function LocalEnvironmentSetting() {
         <AlertDialogPopup>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {enabled ? "Turn off local environment?" : "Turn on local environment?"}
+              {tText(enabled ? "Turn off local environment?" : "Turn on local environment?")}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {enabled
-                ? "T3 Code will restart without running a server on this computer. Any agents and terminals running here will stop, and other devices will no longer be able to connect to this computer. Your projects, history, and remote environments are unaffected."
-                : "T3 Code will restart and start running a server on this computer again."}
+                ? tText(
+                    "T3 Code will restart without running a server on this computer. Any agents and terminals running here will stop, and other devices will no longer be able to connect to this computer. Your projects, history, and remote environments are unaffected.",
+                  )
+                : tText("T3 Code will restart and start running a server on this computer again.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           {error ? <p className="px-6 pb-4 text-sm text-destructive">{error}</p> : null}
           <AlertDialogFooter>
             <AlertDialogClose disabled={isUpdating} render={<Button variant="outline" />}>
-              Cancel
+              {tText("Cancel")}
             </AlertDialogClose>
             <Button
               variant={enabled ? "destructive" : "default"}
@@ -87,12 +91,12 @@ export function LocalEnvironmentSetting() {
               {isUpdating ? (
                 <>
                   <Spinner size="sm" />
-                  Restarting…
+                  {tText("Restarting…")}
                 </>
               ) : enabled ? (
-                "Restart and turn off"
+                tText("Restart and turn off")
               ) : (
-                "Restart and turn on"
+                tText("Restart and turn on")
               )}
             </Button>
           </AlertDialogFooter>
