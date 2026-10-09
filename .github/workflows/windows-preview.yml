@@ -109,9 +109,20 @@ jobs:
           if ($installers[0].Name -notmatch '^T3-Code-[0-9]+\.[0-9]+\.[0-9]+-(pr|preview)\..*-x64\.exe$') {
             throw "Installer name does not identify a Chinese x64 preview: $($installers[0].Name)"
           }
-          $feedFiles = @($files | Where-Object { $_.Extension -in @(".yml", ".blockmap") })
+          # electron-builder emits these local diagnostics/differential data
+          # even when no publish provider is configured. They are not feeds
+          # and are intentionally excluded from the uploaded Artifact.
+          $feedFiles = @($files | Where-Object {
+            $_.Extension -eq ".yml" -and $_.Name -ne "builder-debug.yml"
+          })
           if ($feedFiles.Count -ne 0) {
             throw "Preview build unexpectedly emitted updater files: $($feedFiles.Name -join ', ')"
+          }
+          $diagnostics = @($files | Where-Object {
+            $_.Name -eq "builder-debug.yml" -or $_.Extension -eq ".blockmap"
+          })
+          if ($diagnostics.Count -gt 0) {
+            "Ignored non-feed build diagnostics: $($diagnostics.Name -join ', ')"
           }
           if (Test-Path release/latest.yml) { throw "latest.yml must not be emitted for a preview" }
           if (Test-Path release/nightly.yml) { throw "nightly.yml must not be emitted for a preview" }
