@@ -15,6 +15,7 @@ import { cn } from "~/lib/utils";
 import { serverEnvironment } from "~/state/server";
 import { readEnvironmentScope, useEnvironmentScope } from "~/state/session";
 import { useAtomCommand } from "~/state/use-atom-command";
+import { useI18n } from "~/i18n/i18n";
 import { useLocalEnvironmentUpdateGroups } from "./ProviderUpdateLaunchNotification.environments";
 import {
   collectProviderUpdateOutcomeSnapshots,
@@ -22,6 +23,7 @@ import {
   getProviderUpdateProgressToastView,
   getProviderUpdateSidebarPillView,
   isTerminalProviderUpdatePhase,
+  localizeProviderUpdateText,
   resolveEnvironmentUpdateRowStatus,
   type LocalEnvironmentUpdateGroup,
   type LocalProviderUpdateOutcome,
@@ -120,7 +122,9 @@ function EnvironmentUpdateRow({
   readonly status: ProviderUpdateRowStatus;
   readonly onUpdate: () => void;
 }) {
+  const { tText } = useI18n();
   const canManageProviders = useEnvironmentScope(group.environmentId, AuthProvidersManageScope);
+  const localizedStatusText = localizeProviderUpdateText(status.text, tText);
   let trailing: ReactNode;
   switch (status.kind) {
     case "loading":
@@ -133,14 +137,14 @@ function EnvironmentUpdateRow({
     case "unchanged":
       trailing = (
         <Button size="xs" variant="outline" disabled={!canManageProviders} onClick={onUpdate}>
-          Retry
+          {tText("Retry")}
         </Button>
       );
       break;
     default:
       trailing = (
         <Button size="xs" variant="outline" disabled={!canManageProviders} onClick={onUpdate}>
-          Update
+          {tText("Update")}
         </Button>
       );
       break;
@@ -150,10 +154,12 @@ function EnvironmentUpdateRow({
     <div className="flex items-center justify-between gap-3 py-0.5">
       <div className="flex min-w-0 flex-col">
         <span className="truncate font-medium text-foreground">{group.label}</span>
-        <span className={cn("truncate text-xs", rowToneClass(status.kind))}>{status.text}</span>
+        <span className={cn("truncate text-xs", rowToneClass(status.kind))}>
+          {localizedStatusText}
+        </span>
         {!canManageProviders ? (
           <span className="text-xs text-muted-foreground">
-            This connection cannot manage provider accounts.
+            {tText("This connection cannot manage provider accounts.")}
           </span>
         ) : null}
       </div>
