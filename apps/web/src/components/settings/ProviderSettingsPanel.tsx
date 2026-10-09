@@ -94,6 +94,7 @@ import { UsageProviderSettings } from "./UsageProviderSettings";
 import { ProviderSetupSection, readAntigravityAuthMethod } from "./ProviderSetupSection";
 import { ProviderAuthenticationSection } from "./ProviderAuthenticationSection";
 import { CodexSetupSection, CodexManagedRuntimeFields } from "./CodexSetupSection";
+import { useI18n } from "~/i18n/i18n";
 import { readCodexSetupMode } from "./CodexSetupSection.logic";
 import { providerClients } from "./providerDriverMeta";
 import { searchableSetting } from "./settingsSearch";
@@ -156,6 +157,7 @@ function configuredBinaryPath(config: unknown): string {
 }
 
 function ProviderLastChecked({ lastCheckedAt }: { lastCheckedAt: string | null }) {
+  const { locale, tText } = useI18n();
   useRelativeTimeTick();
   const lastCheckedRelative = getRelativeTimeState(lastCheckedAt);
 
@@ -164,18 +166,30 @@ function ProviderLastChecked({ lastCheckedAt }: { lastCheckedAt: string | null }
   }
 
   if (lastCheckedRelative.status === "invalid") {
-    return <span>Checked unavailable</span>;
+    return <span>{tText("Checked unavailable")}</span>;
   }
+
+  const localizedRelativeValue = (() => {
+    if (locale !== "zh-CN") return lastCheckedRelative.value;
+    const match = /^(\d+)([mhd])$/u.exec(lastCheckedRelative.value);
+    if (!match) return tText(lastCheckedRelative.value);
+    const unitSource = { m: "minutes", h: "hours", d: "days" } as const;
+    return `${match[1]}${tText(unitSource[match[2] as keyof typeof unitSource])}`;
+  })();
 
   return (
     <span>
       {lastCheckedRelative.suffix ? (
         <>
-          Checked <span className="font-mono tabular-nums">{lastCheckedRelative.value}</span>{" "}
-          {lastCheckedRelative.suffix}
+          {tText("Checked")} {" "}
+          <span className="font-mono tabular-nums">{localizedRelativeValue}</span>
+          {locale === "zh-CN" ? null : " "}
+          {tText(lastCheckedRelative.suffix)}
         </>
       ) : (
-        <>Checked {lastCheckedRelative.value}</>
+        <>
+          {tText("Checked")} {tText(lastCheckedRelative.value)}
+        </>
       )}
     </span>
   );

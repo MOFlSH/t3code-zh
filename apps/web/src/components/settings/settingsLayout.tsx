@@ -299,6 +299,7 @@ export function SettingsRow({
   const { tText } = useI18n();
   const localizedTitle = typeof title === "string" ? tText(title) : title;
   const localizedDescription = typeof description === "string" ? tText(description) : description;
+  const localizedStatus = typeof status === "string" ? tText(status) : status;
   const primarySettingsAvailable = usePrimarySettingsAvailable();
   const context = useOptionalSettingsScope();
   const primaryEnvironmentId = usePrimaryEnvironmentId();
@@ -467,7 +468,7 @@ export function SettingsRow({
           : {})}
       />
     ) : null;
-  const renderedStatus = status;
+  const renderedStatus = localizedStatus;
 
   return (
     <div

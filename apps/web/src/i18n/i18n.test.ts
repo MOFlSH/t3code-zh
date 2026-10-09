@@ -32,6 +32,21 @@ describe("application localization", () => {
     );
   });
 
+  it("covers the settings and provider phrases shown in the desktop preview", () => {
+    expect(resolveSourceMessage("zh-CN", "Panel animations")).toBe("面板动画");
+    expect(
+      resolveSourceMessage(
+        "zh-CN",
+        "Default permissions for new threads. Projects can override them.",
+      ),
+    ).toBe("新建会话的默认权限。项目可以覆盖此设置。");
+    expect(resolveSourceMessage("zh-CN", "Full access")).toBe("完全访问");
+    expect(resolveSourceMessage("zh-CN", "Authenticated as")).toBe("已认证账户");
+    expect(resolveSourceMessage("zh-CN", "ChatGPT Plus Subscription")).toBe(
+      "ChatGPT Plus 订阅",
+    );
+  });
+
   it("interpolates values without erasing unknown placeholders", () => {
     expect(formatMessage("Compact {count} tokens ({unknown})", { count: 12 })).toBe(
       "Compact 12 tokens ({unknown})",

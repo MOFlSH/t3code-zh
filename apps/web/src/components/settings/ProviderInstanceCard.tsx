@@ -56,6 +56,7 @@ import { ProviderInstanceIcon } from "../chat/ProviderInstanceIcon";
 import { ProviderAccentColorPicker } from "./ProviderAccentColorPicker";
 import { RedactedSensitiveText } from "./RedactedSensitiveText";
 import { SettingsRow, SettingsSection } from "./settingsLayout";
+import { useI18n } from "~/i18n/i18n";
 import { AcpSessionManagementSection } from "./AcpSessionManagementSection";
 import { FoldedSettingsSection } from "./FoldedSettingsSection";
 import { readCodexSetupMode } from "./CodexSetupSection.logic";
@@ -569,6 +570,7 @@ export function ProviderInstanceCard({
   environmentId,
   acpProjects = EMPTY_ACP_PROJECTS,
 }: ProviderInstanceCardProps) {
+  const { tText } = useI18n();
   const enabled = resolveProviderInstanceEnabled(instance);
   const compatibility = enabled ? liveProvider?.compatibilityAdvisory : undefined;
   // A locally disabled provider reads "Disabled" with a muted dot even if its
@@ -580,6 +582,12 @@ export function ProviderInstanceCard({
   const summary = enabled
     ? getProviderSummary(liveProvider)
     : { headline: "Disabled", detail: null };
+  const localizeStatusText = (value: string) => {
+    const separator = value.indexOf(" · ");
+    if (separator < 0) return tText(value);
+    return `${tText(value.slice(0, separator))} · ${tText(value.slice(separator + 3))}`;
+  };
+  const localizedSummaryHeadline = localizeStatusText(summary.headline);
   const authEmail = liveProvider?.auth.email?.trim();
   const isAuthenticated = enabled && liveProvider?.auth.status === "authenticated";
   const authLabel =
@@ -774,23 +782,26 @@ export function ProviderInstanceCard({
         ? "Unsupported"
         : "Limited support"
     : summary.detail;
+  const localizedInlineStatusDetail = inlineStatusDetail
+    ? tText(inlineStatusDetail)
+    : null;
   const editorStatusNode =
     isAuthenticated && authEmail ? (
       <>
         {needsAttention ? statusDotNode : null}
-        <span>Authenticated as</span>
+        <span>{tText("Authenticated as")}</span>
         <ProviderAuthEmail email={authEmail} />
-        {authLabel ? <span>· {authLabel}</span> : null}
-        {inlineStatusDetail ? (
-          <span className="min-w-0 [overflow-wrap:anywhere]">· {inlineStatusDetail}</span>
+        {authLabel ? <span>· {tText(authLabel)}</span> : null}
+        {localizedInlineStatusDetail ? (
+          <span className="min-w-0 [overflow-wrap:anywhere]">· {localizedInlineStatusDetail}</span>
         ) : null}
       </>
     ) : (
       <>
         {statusDotNode}
-        <span>{summary.headline}</span>
-        {inlineStatusDetail ? (
-          <span className="min-w-0 [overflow-wrap:anywhere]">· {inlineStatusDetail}</span>
+        <span>{localizedSummaryHeadline}</span>
+        {localizedInlineStatusDetail ? (
+          <span className="min-w-0 [overflow-wrap:anywhere]">· {localizedInlineStatusDetail}</span>
         ) : null}
       </>
     );
@@ -954,8 +965,10 @@ export function ProviderInstanceCard({
                     `Updating · ${updateProgress}`
                   ) : (
                     <>
-                      {summary.headline}
-                      {needsAttention && inlineStatusDetail ? ` · ${inlineStatusDetail}` : null}
+                      {localizedSummaryHeadline}
+                      {needsAttention && localizedInlineStatusDetail
+                        ? ` · ${localizedInlineStatusDetail}`
+                        : null}
                     </>
                   )}
                 </span>
