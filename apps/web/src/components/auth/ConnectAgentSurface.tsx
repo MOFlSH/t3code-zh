@@ -16,6 +16,7 @@ import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { PrimaryEnvironmentHttpClient } from "~/environments/primary/httpClient";
 import { runPrimaryHttp } from "~/lib/runtime";
 import { cn } from "~/lib/utils";
+import { useI18n, type MessageKey } from "~/i18n/i18n";
 import { runtimeModeConfig } from "../chat/runtimeModeConfig";
 import { Alert, AlertDescription } from "../ui/alert";
 import { Button } from "../ui/button";
@@ -24,15 +25,8 @@ import { RadioGroup } from "../ui/radio-group";
 import { Spinner } from "../ui/spinner";
 import { AuthSurfaceShell } from "./AuthSurfaceShell";
 
-const accessConfig: Record<
-  AuthMcpClientAccess,
-  { readonly label: string; readonly description: string; readonly icon: LucideIcon }
-> = {
-  "read-only": {
-    label: "Read only",
-    description: "Read projects and threads. Cannot start, message or change anything.",
-    icon: EyeIcon,
-  },
+const accessConfig: Record<AuthMcpClientAccess, { readonly icon: LucideIcon }> = {
+  "read-only": { icon: EyeIcon },
   ...runtimeModeConfig,
 };
 
@@ -46,7 +40,6 @@ type Loaded =
   | { readonly status: "invalid"; readonly message: string }
   | { readonly status: "ready"; readonly details: AuthMcpApprovalDetails };
 
-const UNREACHABLE = "Could not reach this environment. Try again.";
 const isApprovalError = Schema.is(AuthMcpApprovalError);
 
 type Answer<A> =
@@ -64,6 +57,7 @@ function runApproval<A>(
   call: (
     client: Context.Service.Shape<typeof PrimaryEnvironmentHttpClient>,
   ) => Effect.Effect<A | { readonly redirectTo: string }, unknown>,
+  unreachableMessage: string,
 ): Promise<Answer<A>> {
   return runPrimaryHttp(
     PrimaryEnvironmentHttpClient.pipe(
@@ -76,11 +70,11 @@ function runApproval<A>(
       Effect.catch((error) =>
         Effect.succeed<Answer<A>>({
           kind: "error",
-          message: isApprovalError(error) ? error.message : UNREACHABLE,
+          message: isApprovalError(error) ? error.message : unreachableMessage,
         }),
       ),
     ),
-  ).catch((): Answer<A> => ({ kind: "error", message: UNREACHABLE }));
+  ).catch((): Answer<A> => ({ kind: "error", message: unreachableMessage }));
 }
 
 function readAuthorizationRequest(): AuthMcpAuthorizationRequest {
@@ -101,7 +95,28 @@ function oneClickApproves(details: AuthMcpApprovalDetails, access: AuthMcpClient
   return details.csrfToken !== undefined && (details.oneClickAccess ?? []).includes(access);
 }
 
+const accessMessageKeys: Record<
+  AuthMcpClientAccess,
+  { label: MessageKey; description: MessageKey }
+> = {
+  "read-only": { label: "auth.access.readOnly", description: "auth.access.readOnlyDescription" },
+  "approval-required": {
+    label: "auth.access.supervised",
+    description: "auth.access.supervisedDescription",
+  },
+  "auto-accept-edits": {
+    label: "auth.access.autoAcceptEdits",
+    description: "auth.access.autoAcceptEditsDescription",
+  },
+  auto: { label: "auth.access.auto", description: "auth.access.autoDescription" },
+  "full-access": {
+    label: "auth.access.fullAccess",
+    description: "auth.access.fullAccessDescription",
+  },
+};
+
 export function ConnectAgentSurface() {
+  const { t } = useI18n();
   const [authorization] = useState(readAuthorizationRequest);
   const [loaded, setLoaded] = useState<Loaded>({ status: "loading" });
   const [access, setAccess] = useState<AuthMcpClientAccess>("read-only");
@@ -111,24 +126,25 @@ export function ConnectAgentSurface() {
 
   useEffect(() => {
     let cancelled = false;
-    void runApproval((client) => client.mcpOAuth.approval({ payload: authorization })).then(
-      (answer) => {
-        if (cancelled) return;
-        if (answer.kind === "redirect") {
-          window.location.replace(answer.url);
-          return;
-        }
-        setLoaded(
-          answer.kind === "error"
-            ? { status: "invalid", message: answer.message }
-            : { status: "ready", details: answer.value },
-        );
-      },
-    );
+    void runApproval(
+      (client) => client.mcpOAuth.approval({ payload: authorization }),
+      t("auth.unreachable"),
+    ).then((answer) => {
+      if (cancelled) return;
+      if (answer.kind === "redirect") {
+        window.location.replace(answer.url);
+        return;
+      }
+      setLoaded(
+        answer.kind === "error"
+          ? { status: "invalid", message: answer.message }
+          : { status: "ready", details: answer.value },
+      );
+    });
     return () => {
       cancelled = true;
     };
-  }, [authorization]);
+  }, [authorization, t]);
 
   const decide = useCallback(
     async (choice: "approve" | "deny") => {
@@ -142,25 +158,26 @@ export function ConnectAgentSurface() {
           : csrfToken !== undefined && oneClickApproves(loaded.details, access)
             ? { _tag: "browser-session", access, csrfToken }
             : { _tag: "pairing-code", access, code: pairingCode.trim() };
-      const answer = await runApproval((client) =>
-        client.mcpOAuth.decision({ payload: { authorization, decision } }),
+      const answer = await runApproval(
+        (client) => client.mcpOAuth.decision({ payload: { authorization, decision } }),
+        t("auth.unreachable"),
       );
       if (answer.kind === "redirect") {
         window.location.replace(answer.url);
         return;
       }
       setPending(null);
-      setErrorMessage(answer.kind === "error" ? answer.message : "The sign-in could not continue.");
+      setErrorMessage(answer.kind === "error" ? answer.message : t("auth.signInCouldNotContinue"));
     },
-    [access, authorization, loaded, pairingCode],
+    [access, authorization, loaded, pairingCode, t],
   );
 
   if (loaded.status === "loading") {
     return (
       <AuthSurfaceShell>
         <ConnectAgentHeading
-          title="Checking the sign-in request"
-          description="One moment while this environment verifies the agent's request."
+          title={t("auth.checkingRequest")}
+          description={t("auth.verifyingRequest")}
         />
         <Spinner className="mt-6" size="lg" tone="muted" />
       </AuthSurfaceShell>
@@ -170,10 +187,8 @@ export function ConnectAgentSurface() {
   if (loaded.status === "invalid") {
     return (
       <AuthSurfaceShell>
-        <ConnectAgentHeading title="This sign-in cannot continue" description={loaded.message} />
-        <p className="mt-4 text-sm text-muted-foreground">
-          Close this page and start the sign-in again from your agent.
-        </p>
+        <ConnectAgentHeading title={t("auth.signInCannotContinue")} description={loaded.message} />
+        <p className="mt-4 text-sm text-muted-foreground">{t("auth.closeAndRetry")}</p>
       </AuthSurfaceShell>
     );
   }
@@ -185,27 +200,13 @@ export function ConnectAgentSurface() {
   return (
     <AuthSurfaceShell>
       <ConnectAgentHeading
-        title={`Connect ${details.clientName}`}
-        description={
-          <>
-            This agent wants to use the threads in every project on{" "}
-            <span className="font-medium text-foreground">{details.environmentHost}</span>.
-          </>
-        }
+        title={t("auth.connectTitle", { name: details.clientName })}
+        description={t("auth.requestAccessDescription", { host: details.environmentHost })}
       />
       <p className="mt-2 text-xs text-muted-foreground">
-        {redirectsToThisComputer(details.redirectHost) ? (
-          <>
-            The name is chosen by the agent. Approval returns to {details.redirectHost} on the
-            computer that opened this page. Only approve a sign-in you just started.
-          </>
-        ) : (
-          <>
-            The name is chosen by the agent. Approval gives access to whoever runs{" "}
-            <span className="font-medium text-foreground">{details.redirectHost}</span>. Only
-            approve a sign-in you just started there.
-          </>
-        )}
+        {redirectsToThisComputer(details.redirectHost)
+          ? t("auth.redirectToThisComputer", { host: details.redirectHost })
+          : t("auth.redirectToOtherComputer", { host: details.redirectHost })}
       </p>
 
       <form
@@ -217,7 +218,7 @@ export function ConnectAgentSurface() {
       >
         <div className="space-y-2">
           <span id="connect-agent-access-label" className="text-sm font-medium">
-            What it may do
+            {t("auth.whatItMayDo")}
           </span>
           <RadioGroup
             aria-labelledby="connect-agent-access-label"
@@ -228,16 +229,13 @@ export function ConnectAgentSurface() {
               <AccessOption key={option} access={option} selected={option === access} />
             ))}
           </RadioGroup>
-          <p className="text-xs text-muted-foreground">
-            Beyond read only, it can start, message and stop threads, and none of them can run with
-            more than the mode you pick.
-          </p>
+          <p className="text-xs text-muted-foreground">{t("auth.accessModeDescription")}</p>
         </div>
 
         {oneClick ? null : (
           <div className="space-y-2">
             <label className="text-sm font-medium" htmlFor="connect-agent-pairing-code">
-              Pairing code
+              {t("auth.pairingCode")}
             </label>
             <Input
               id="connect-agent-pairing-code"
@@ -247,14 +245,11 @@ export function ConnectAgentSurface() {
               disabled={pending !== null}
               nativeInput
               onChange={(event) => setPairingCode(event.currentTarget.value)}
-              placeholder="Paste a one-time pairing code"
+              placeholder={t("auth.pairingPlaceholder")}
               spellCheck={false}
               value={pairingCode}
             />
-            <p className="text-xs text-muted-foreground">
-              Create one in Settings → Connections, or run <code>t3 auth pairing create</code> on
-              this machine.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("auth.pairingHelp")}</p>
           </div>
         )}
 
@@ -266,7 +261,7 @@ export function ConnectAgentSurface() {
 
         <div className="flex flex-wrap gap-2">
           <Button disabled={!canApprove} type="submit">
-            {pending === "approve" ? "Approving…" : "Approve"}
+            {pending === "approve" ? t("auth.approving") : t("auth.approve")}
           </Button>
           <Button
             disabled={pending !== null}
@@ -274,7 +269,7 @@ export function ConnectAgentSurface() {
             type="button"
             variant="outline"
           >
-            {pending === "deny" ? "Denying…" : "Deny"}
+            {pending === "deny" ? t("auth.denying") : t("auth.deny")}
           </Button>
         </div>
       </form>
@@ -289,9 +284,12 @@ function ConnectAgentHeading({
   readonly title: string;
   readonly description: ReactNode;
 }) {
+  const { t } = useI18n();
   return (
     <>
-      <p className="text-3xs font-semibold tracking-widest text-primary uppercase">Agent sign-in</p>
+      <p className="text-3xs font-semibold tracking-widest text-primary uppercase">
+        {t("auth.agentSignIn")}
+      </p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{description}</p>
     </>
@@ -305,7 +303,9 @@ function AccessOption({
   readonly access: AuthMcpClientAccess;
   readonly selected: boolean;
 }) {
-  const { label, description, icon: Icon } = accessConfig[access];
+  const { t } = useI18n();
+  const { icon: Icon } = accessConfig[access];
+  const { label, description } = accessMessageKeys[access];
   return (
     <RadioPrimitive.Root
       value={access}
@@ -325,8 +325,8 @@ function AccessOption({
         )}
       />
       <span className="min-w-0">
-        <span className="block text-sm font-medium text-foreground">{label}</span>
-        <span className="block text-xs text-muted-foreground">{description}</span>
+        <span className="block text-sm font-medium text-foreground">{t(label)}</span>
+        <span className="block text-xs text-muted-foreground">{t(description)}</span>
       </span>
     </RadioPrimitive.Root>
   );

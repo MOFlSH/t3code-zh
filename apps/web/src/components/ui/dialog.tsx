@@ -3,6 +3,7 @@
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";
 import { cn } from "~/lib/utils";
+import { useI18n } from "~/i18n/i18n";
 import { Button } from "~/components/ui/button";
 import {
   DIALOG_BACKDROP_CLASS,
@@ -68,6 +69,7 @@ function DialogPopup({
   bottomStickOnMobile?: boolean;
   variant?: "default" | "media";
 }) {
+  const { tText } = useI18n();
   return (
     <DialogPortal>
       {/* Media opens from inside other overlays (a composer chip, a popover), so it sits above them. */}
@@ -93,7 +95,7 @@ function DialogPopup({
           {children}
           {showCloseButton && (
             <DialogPrimitive.Close
-              aria-label="Close"
+              aria-label={tText("Close")}
               className="absolute end-2 top-2"
               render={<Button size="icon" variant="ghost" />}
             >
@@ -141,21 +143,27 @@ function DialogFooter({
 }
 
 function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props.children === "string" ? { ...props, children: tText(props.children) } : props;
   return (
     <DialogPrimitive.Title
       className={cn("wrap-anywhere font-semibold text-xl leading-none", className)}
       data-slot="dialog-title"
-      {...props}
+      {...localizedProps}
     />
   );
 }
 
 function DialogDescription({ className, ...props }: DialogPrimitive.Description.Props) {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props.children === "string" ? { ...props, children: tText(props.children) } : props;
   return (
     <DialogPrimitive.Description
       className={cn("text-muted-foreground text-sm", className)}
       data-slot="dialog-description"
-      {...props}
+      {...localizedProps}
     />
   );
 }

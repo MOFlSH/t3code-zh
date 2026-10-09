@@ -2,9 +2,33 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 
 import { scrollToSettingsTarget, SettingsRow, SettingsUnavailableGroup } from "./settingsLayout";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Label } from "../ui/label";
+import { Switch } from "../ui/switch";
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe("shared localized controls", () => {
+  it("translates matching literal labels by the selected locale", () => {
+    const markup = renderToStaticMarkup(
+      <>
+        <Button>Cancel</Button>
+        <Button aria-label="Close composer" />
+        <Input placeholder="Search files" />
+        <Label>Host</Label>
+        <Switch aria-label="Agent browser access" />
+      </>,
+    );
+
+    expect(markup).toContain("取消");
+    expect(markup).toContain('aria-label="关闭输入框"');
+    expect(markup).toContain('placeholder="搜索文件"');
+    expect(markup).toContain("主机");
+    expect(markup).toContain('aria-label="智能体浏览器访问"');
+  });
 });
 
 describe("unavailable settings", () => {
@@ -15,7 +39,9 @@ describe("unavailable settings", () => {
       </SettingsUnavailableGroup>,
     );
 
-    expect(markup).toContain("Only available in the desktop app.");
+    expect(markup).toContain("仅桌面应用可用。");
+    expect(markup).toContain("窗口捕获");
+    expect(markup).toContain("捕获窗口。");
     expect(markup).toContain("border-border/60");
     expect(markup).toContain("[&amp;_h3]:opacity-64");
   });

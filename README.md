@@ -1,4 +1,8 @@
-# T3 Code
+# T3 Code 简体中文 Fork
+
+这是 [MOFlSH/t3code-zh](https://github.com/MOFlSH/t3code-zh) 中文化分支：主要界面默认使用简体中文，并可在设置中切换英文；尚未完成本地化的文案会显示英文。开发、上游同步、翻译检查、Windows x64 构建及发布说明见[中文版 Fork 指南](./docs/operations/chinese-fork.md)。中文版桌面安装包发布于本仓库的 [GitHub Releases](https://github.com/MOFlSH/t3code-zh/releases)，与官方版使用不同的应用 ID、更新源和默认用户数据目录。
+
+> 下方原版项目介绍与安装链接描述的是官方 T3 Code；请使用中文版 Release 页面获取本 Fork 的安装包。
 
 T3 Code is an "agent harness control surface". It enables control of the agents on your machine with a best-in-class mobile app ([iOS](https://apps.apple.com/us/app/t3-code-remote-claude-more/id6787819824), [Android](https://play.google.com/store/apps/details?id=com.t3tools.t3code)), [web app](https://app.t3.codes) and [Electron-based desktop app](https://t3.codes).
 

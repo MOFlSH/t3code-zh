@@ -2,6 +2,7 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { createContext, use, useEffect, useRef, type ComponentProps, type RefObject } from "react";
 
 import { cn } from "~/lib/utils";
+import { useI18n } from "~/i18n/i18n";
 
 const TooltipProvider = TooltipPrimitive.Provider;
 
@@ -63,15 +64,20 @@ function Tooltip<Payload>(props: TooltipPrimitive.Root.Props<Payload>) {
 }
 
 function TooltipTrigger(props: TooltipPrimitive.Trigger.Props) {
+  const { tText } = useI18n();
   const hovered = use(TooltipScrollContext);
   const actionsRef = use(TooltipHoverContext);
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   if (!hovered || !actionsRef) {
-    return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...props} />;
+    return <TooltipPrimitive.Trigger data-slot="tooltip-trigger" {...localizedProps} />;
   }
   return (
     <TooltipPrimitive.Trigger
       data-slot="tooltip-trigger"
-      {...props}
+      {...localizedProps}
       onMouseEnter={(event) => {
         props.onMouseEnter?.(event);
         hovered.current = { trigger: event.currentTarget, actionsRef };
@@ -97,6 +103,8 @@ function TooltipPopup({
   variant?: "default" | "glass" | "code";
   anchor?: TooltipPrimitive.Positioner.Props["anchor"];
 }) {
+  const { tText } = useI18n();
+  const localizedChildren = typeof children === "string" ? tText(children) : children;
   return (
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Positioner
@@ -126,7 +134,7 @@ function TooltipPopup({
             className="relative size-full overflow-clip px-(--viewport-inline-padding) py-1 [--viewport-inline-padding:--spacing(2)] data-instant:transition-none **:data-current:data-ending-style:opacity-0 **:data-current:data-starting-style:opacity-0 **:data-previous:data-ending-style:opacity-0 **:data-previous:data-starting-style:opacity-0 **:data-current:w-[calc(var(--popup-width)-2*var(--viewport-inline-padding)-2px)] **:data-previous:w-[calc(var(--popup-width)-2*var(--viewport-inline-padding)-2px)] **:data-previous:truncate **:data-current:opacity-100 **:data-previous:opacity-100 **:data-current:transition-opacity **:data-previous:transition-opacity"
             data-slot="tooltip-viewport"
           >
-            {children}
+            {localizedChildren}
           </TooltipPrimitive.Viewport>
         </TooltipPrimitive.Popup>
       </TooltipPrimitive.Positioner>

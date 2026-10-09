@@ -1,0 +1,94 @@
+name: Release T3 Code 简体中文 for Windows x64
+
+on:
+  push:
+    tags:
+      - "zh-v*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Stable release version, for example 1.0.0
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: zh-cn-release-${{ github.ref_name || inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  windows-x64:
+    name: Build and publish Windows x64 installer
+    runs-on: windows-2025
+    timeout-minutes: 90
+    env:
+      T3CODE_DESKTOP_UPDATE_REPOSITORY: MOFlSH/t3code-zh
+      T3CODE_CLERK_PUBLISHABLE_KEY: ${{ vars.CLERK_PUBLISHABLE_KEY }}
+      T3CODE_CLERK_JWT_TEMPLATE: ${{ vars.CLERK_JWT_TEMPLATE }}
+      T3CODE_CLERK_CLI_OAUTH_CLIENT_ID: ${{ vars.CLERK_CLI_OAUTH_CLIENT_ID }}
+      T3CODE_RELAY_URL: ${{ vars.T3CODE_RELAY_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version-file: package.json
+          cache: true
+          run-install: true
+      - name: Resolve release version
+        id: version
+        shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            version="$INPUT_VERSION"
+          else
+            version="${REF_NAME#zh-v}"
+          fi
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Expected a stable semantic version (for example 1.0.0), got: $version" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=zh-v$version" >> "$GITHUB_OUTPUT"
+      - name: Build Windows x64 NSIS installer
+        shell: pwsh
+        run: |
+          if (Test-Path release) { Remove-Item release -Recurse -Force }
+          node scripts/build-desktop-artifact.ts `
+            --platform win `
+            --target nsis `
+            --arch x64 `
+            --build-version "${{ steps.version.outputs.version }}" `
+            --output-dir release
+      - name: Publish GitHub Release and auto-update metadata
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          set -euo pipefail
+          mapfile -t assets < <(find release -maxdepth 1 -type f -print | sort)
+          if (( ${#assets[@]} == 0 )); then
+            echo "No installer or update metadata was produced." >&2
+            exit 1
+          fi
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" "${assets[@]}" --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+              --title "T3 Code 简体中文 v$RELEASE_VERSION" --latest
+          else
+            gh release create "$RELEASE_TAG" "${assets[@]}" \
+              --repo "$GITHUB_REPOSITORY" \
+              --target "$GITHUB_SHA" \
+              --title "T3 Code 简体中文 v$RELEASE_VERSION" \
+              --generate-notes \
+              --latest
+          fi

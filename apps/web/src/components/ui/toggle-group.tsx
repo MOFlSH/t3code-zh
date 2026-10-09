@@ -7,6 +7,7 @@ import * as React from "react";
 
 import { cn } from "~/lib/utils";
 import { Toggle as ToggleComponent, type toggleVariants } from "~/components/ui/toggle";
+import { useI18n } from "~/i18n/i18n";
 
 const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariants>>({
   size: "default",
@@ -21,6 +22,11 @@ function ToggleGroup({
   children,
   ...props
 }: ToggleGroupPrimitive.Props & VariantProps<typeof toggleVariants>) {
+  const { tText } = useI18n();
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   const value = React.useMemo(() => ({ size, variant }), [size, variant]);
   return (
     <ToggleGroupPrimitive
@@ -42,7 +48,7 @@ function ToggleGroup({
       data-slot="toggle-group"
       data-variant={variant}
       orientation={orientation}
-      {...props}
+      {...localizedProps}
     >
       <ToggleGroupContext value={value}>{children}</ToggleGroupContext>
     </ToggleGroupPrimitive>

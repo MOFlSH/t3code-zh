@@ -50,6 +50,7 @@ import {
 } from "./settingsSearch";
 import { useAvailableSettingsSearchItems } from "./useAvailableSettingsSearchItems";
 import { validateSettingsScopeSearch } from "./settingsScope";
+import { useI18n, type MessageKey } from "~/i18n/i18n";
 
 const SnapShotIcon = createLucideIcon("snap-shot", [
   [
@@ -91,6 +92,21 @@ const SETTINGS_SECTION_ICONS: Readonly<
   "/settings/archived": ArchiveIcon,
 };
 
+const SETTINGS_SECTION_MESSAGE_KEYS: Readonly<Record<SettingsPath, MessageKey>> = {
+  "/settings/projects": "settings.section.project",
+  "/settings/general": "settings.section.general",
+  "/settings/appearance": "settings.section.appearance",
+  "/settings/keybindings": "settings.section.keybindings",
+  "/settings/snap-shot": "settings.section.snapshots",
+  "/settings/providers": "settings.section.providers",
+  "/settings/integrations": "settings.section.integrations",
+  "/settings/scheduled-tasks": "settings.section.scheduledTasks",
+  "/settings/source-control": "settings.section.sourceControl",
+  "/settings/storage": "settings.section.storage",
+  "/settings/connections": "settings.section.connections",
+  "/settings/archived": "settings.section.archive",
+};
+
 const SETTINGS_NAV_ITEMS: ReadonlyArray<{
   label: string;
   to: SettingsPath;
@@ -107,6 +123,7 @@ function SettingsSectionIcon({ to }: { to: SettingsPath }) {
 }
 
 export function SettingsSidebarNav({ pathname }: { pathname: string }) {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const currentHash = useLocation({ select: (location) => location.hash });
   const currentSearch = useLocation({ select: (location) => location.search });
@@ -250,8 +267,8 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                   setActiveResultIndex(0);
                 }}
                 onKeyDown={handleSearchKeyDown}
-                placeholder="Search"
-                aria-label="Search settings"
+                placeholder={t("settings.search")}
+                aria-label={t("settings.searchLabel")}
                 role="combobox"
                 aria-autocomplete="list"
                 aria-expanded={isSearching && hasResults}
@@ -269,7 +286,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                   size="icon-micro"
                   variant="ghost-muted"
                   className="shrink-0"
-                  aria-label="Clear settings search"
+                  aria-label={t("settings.clearSearch")}
                   onClick={() => {
                     clearSearch();
                     searchInputRef.current?.focus();
@@ -286,14 +303,14 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                 role="status"
                 className="px-2 py-6 text-center text-xs text-sidebar-muted-foreground"
               >
-                No settings found
+                {t("settings.noSearchResults")}
               </p>
             ) : null}
             {isSearching ? (
               <SidebarMenu
                 id={hasResults ? "settings-search-results" : undefined}
                 role={hasResults ? "listbox" : undefined}
-                aria-label={hasResults ? "Settings search results" : undefined}
+                aria-label={hasResults ? t("settings.searchResults") : undefined}
               >
                 {results.map((item, index) => (
                   <SidebarMenuItem key={item.id} role="presentation">
@@ -314,7 +331,7 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                           {item.title}
                         </span>
                         <span className="block truncate text-2xs text-sidebar-muted-foreground/75">
-                          {SETTINGS_SECTION_LABELS[item.to]}
+                          {t(SETTINGS_SECTION_MESSAGE_KEYS[item.to])}
                         </span>
                       </span>
                     </SidebarMenuButton>
@@ -339,7 +356,9 @@ export function SettingsSidebarNav({ pathname }: { pathname: string }) {
                         onClick={() => handleSectionClick(item.to)}
                       >
                         <Icon />
-                        <span className="truncate">{item.label}</span>
+                        <span className="truncate">
+                          {t(SETTINGS_SECTION_MESSAGE_KEYS[item.to])}
+                        </span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );

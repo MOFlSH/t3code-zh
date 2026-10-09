@@ -4,6 +4,7 @@ import { BrowserProfileReporter } from "./browser/BrowserProfileReporter";
 import { ElectronBrowserHost } from "./browser/ElectronBrowserHost";
 import { QuitHoldOverlay } from "./components/QuitHoldOverlay";
 import { AppAtomRegistryProvider } from "./rpc/atomRegistry";
+import { I18nProvider } from "./i18n/i18n";
 import type { AppRouter } from "./router";
 
 /**
@@ -13,11 +14,13 @@ import type { AppRouter } from "./router";
  */
 export function AppRoot({ router }: { readonly router: AppRouter }) {
   return (
-    <AppAtomRegistryProvider>
-      <RouterProvider router={router} />
-      <ElectronBrowserHost />
-      <BrowserProfileReporter />
-      <QuitHoldOverlay />
-    </AppAtomRegistryProvider>
+    <I18nProvider>
+      <AppAtomRegistryProvider>
+        <RouterProvider router={router} />
+        <ElectronBrowserHost />
+        <BrowserProfileReporter />
+        <QuitHoldOverlay />
+      </AppAtomRegistryProvider>
+    </I18nProvider>
   );
 }

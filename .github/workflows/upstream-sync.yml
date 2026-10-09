@@ -1,0 +1,72 @@
+name: Upstream synchronization
+
+on:
+  schedule:
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: Fork branch to update from pingdotgg/t3code main
+        required: false
+        default: main
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: upstream-sync-${{ inputs.target_branch || github.event.repository.default_branch }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.target_branch || github.event.repository.default_branch }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Merge upstream main and open/update a pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TARGET_BRANCH: ${{ inputs.target_branch || github.event.repository.default_branch }}
+          UPSTREAM_REPOSITORY: pingdotgg/t3code
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "$TARGET_BRANCH" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "Invalid target branch name: $TARGET_BRANCH" >&2
+            exit 1
+          fi
+
+          sync_branch="automation/sync-upstream-${TARGET_BRANCH//\//-}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add upstream "https://github.com/${UPSTREAM_REPOSITORY}.git"
+          git fetch origin "$TARGET_BRANCH"
+          git fetch upstream main
+
+          if git merge-base --is-ancestor upstream/main "origin/$TARGET_BRANCH"; then
+            echo "The fork is already up to date with upstream/main."
+            exit 0
+          fi
+
+          git switch --create "$sync_branch" "origin/$TARGET_BRANCH"
+          if ! git merge --no-edit --no-ff upstream/main; then
+            echo "Upstream changes conflict with $TARGET_BRANCH. Resolve the conflicts locally, then rerun this workflow." >&2
+            exit 1
+          fi
+          git push --force origin "$sync_branch"
+
+          if gh pr view "$sync_branch" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Updated the existing upstream synchronization pull request."
+          else
+            gh pr create \
+              --repo "$GITHUB_REPOSITORY" \
+              --base "$TARGET_BRANCH" \
+              --head "$sync_branch" \
+              --title "chore: sync upstream main into ${TARGET_BRANCH}" \
+              --body "Automated merge of pingdotgg/t3code main into ${TARGET_BRANCH}. Review the upstream changes and resolve conflicts if needed."
+          fi

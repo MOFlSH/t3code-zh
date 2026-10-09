@@ -7,6 +7,7 @@ import { ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import type * as React from "react";
 
 import { cn } from "~/lib/utils";
+import { useI18n } from "~/i18n/i18n";
 
 const Select = SelectPrimitive.Root;
 
@@ -45,13 +46,19 @@ function SelectTrigger({
   ...props
 }: SelectPrimitive.Trigger.Props &
   VariantProps<typeof selectTriggerVariants> & { icon?: React.ReactNode }) {
+  const { tText } = useI18n();
+  const localizedChildren = typeof children === "string" ? tText(children) : children;
+  const localizedProps =
+    typeof props["aria-label"] === "string"
+      ? { ...props, "aria-label": tText(props["aria-label"]) }
+      : props;
   return (
     <SelectPrimitive.Trigger
       className={cn(selectTriggerVariants({ size, variant }), className)}
       data-slot="select-trigger"
-      {...props}
+      {...localizedProps}
     >
-      {children}
+      {localizedChildren}
       <SelectPrimitive.Icon data-slot="select-icon">
         {icon ?? <ChevronDownIcon className="-me-1 size-3 opacity-50" />}
       </SelectPrimitive.Icon>
@@ -70,6 +77,14 @@ function SelectButton({
   render,
   ...props
 }: useRender.ComponentProps<"button"> & Pick<VariantProps<typeof selectTriggerVariants>, "size">) {
+  const { tText } = useI18n();
+  const localizedChildren = typeof children === "string" ? tText(children) : children;
+  const localizedProps = {
+    ...props,
+    ...(typeof props["aria-label"] === "string"
+      ? { "aria-label": tText(props["aria-label"]) }
+      : {}),
+  };
   const defaultProps = {
     className: cn(selectTriggerVariants({ size }), className),
     "data-slot": "select-trigger",
@@ -78,10 +93,10 @@ function SelectButton({
   return useRender({
     defaultTagName: "button",
     props: {
-      ...mergeProps<"button">(defaultProps, props),
+      ...mergeProps<"button">(defaultProps, localizedProps),
       children: (
         <>
-          <span className="min-w-0 flex-1 truncate text-left">{children}</span>
+          <span className="min-w-0 flex-1 truncate text-left">{localizedChildren}</span>
           <ChevronDownIcon aria-hidden className="-me-1 size-3 shrink-0 opacity-50" />
         </>
       ),
@@ -90,13 +105,21 @@ function SelectButton({
   });
 }
 
-function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
+function SelectValue({ className, children, ...props }: SelectPrimitive.Value.Props) {
+  const { tText } = useI18n();
+  const localizedChildren = typeof children === "string" ? tText(children) : children;
+  const localizedProps =
+    typeof props.placeholder === "string"
+      ? { ...props, placeholder: tText(props.placeholder) }
+      : props;
   return (
     <SelectPrimitive.Value
       className={cn("flex-1 truncate data-placeholder:text-placeholder", className)}
       data-slot="select-value"
-      {...props}
-    />
+      {...localizedProps}
+    >
+      {localizedChildren}
+    </SelectPrimitive.Value>
   );
 }
 
@@ -176,6 +199,8 @@ function SelectItem({
 }: SelectPrimitive.Item.Props & {
   hideIndicator?: boolean;
 }) {
+  const { tText } = useI18n();
+  const localizedChildren = typeof children === "string" ? tText(children) : children;
   return (
     <SelectPrimitive.Item
       className={cn(
@@ -189,7 +214,7 @@ function SelectItem({
         className="min-w-0 flex-1 [&_svg:not([class*='text-'])]:text-muted-foreground"
         data-slot="select-item-text"
       >
-        {children}
+        {localizedChildren}
       </SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
   );

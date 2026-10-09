@@ -5,6 +5,7 @@ import { mergeProps } from "@base-ui/react/merge-props";
 import type * as React from "react";
 
 import { cn } from "~/lib/utils";
+import { useI18n } from "~/i18n/i18n";
 
 type TextareaProps = React.ComponentProps<"textarea"> & {
   size?: "sm" | "default" | "lg" | number;
@@ -12,6 +13,14 @@ type TextareaProps = React.ComponentProps<"textarea"> & {
 };
 
 function Textarea({ className, size = "default", unstyled = false, ...props }: TextareaProps) {
+  const { tText } = useI18n();
+  const localizedProps = {
+    ...props,
+    ...(typeof props.placeholder === "string" ? { placeholder: tText(props.placeholder) } : {}),
+    ...(typeof props["aria-label"] === "string"
+      ? { "aria-label": tText(props["aria-label"]) }
+      : {}),
+  };
   return (
     <span
       className={
@@ -35,7 +44,7 @@ function Textarea({ className, size = "default", unstyled = false, ...props }: T
               size === "lg" && "min-h-18.5 py-[calc(--spacing(2)-1px)] max-sm:min-h-21.5",
             )}
             data-slot="textarea"
-            {...mergeProps(defaultProps, props)}
+            {...mergeProps(defaultProps, localizedProps)}
           />
         )}
       />

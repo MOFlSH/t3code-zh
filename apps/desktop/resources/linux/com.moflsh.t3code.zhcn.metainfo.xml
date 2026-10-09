@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.moflsh.t3code.zhcn</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>MIT</project_license>
+  <name>T3 Code 简体中文</name>
+  <summary>面向编程智能体的桌面应用</summary>
+  <developer id="com.moflsh">
+    <name>MOFlSH</name>
+  </developer>
+  <description>
+    <p>
+      T3 Code 简体中文是面向编程智能体的开源桌面应用。使用现有智能体订阅，审查代码变更，并在项目中运行命令。
+    </p>
+    <p>
+      可从桌面、网页或移动设备连接，随时随地继续工作。
+    </p>
+  </description>
+  <launchable type="desktop-id">t3code-zh-cn.desktop</launchable>
+  <icon type="stock">t3code-zh-cn</icon>
+  <provides>
+    <binary>t3code-zh-cn</binary>
+  </provides>
+  <categories>
+    <category>Development</category>
+  </categories>
+  <url type="homepage">https://github.com/MOFlSH/t3code-zh</url>
+  <url type="bugtracker">https://github.com/MOFlSH/t3code-zh/issues</url>
+  <url type="vcs-browser">https://github.com/MOFlSH/t3code-zh</url>
+</component>
